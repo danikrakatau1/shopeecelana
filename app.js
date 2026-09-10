@@ -4,6 +4,25 @@ const mobileMenu = document.querySelector('.mobile-menu');
 const menuLinks = mobileMenu ? mobileMenu.querySelectorAll('a') : [];
 const cursor = document.querySelector('.cursor');
 
+// Seller dashboard entry point. Injected here so the landing HTML stays untouched.
+const desktopNav = document.querySelector('.main-nav');
+if (desktopNav && !desktopNav.querySelector('[data-dashboard-link]')) {
+  const dashboardLink = document.createElement('a');
+  dashboardLink.href = './dashboard/';
+  dashboardLink.dataset.dashboardLink = 'true';
+  dashboardLink.textContent = 'Dashboard';
+  desktopNav.appendChild(dashboardLink);
+}
+
+const mobileNav = mobileMenu?.querySelector('nav');
+if (mobileNav && !mobileNav.querySelector('[data-dashboard-link]')) {
+  const dashboardLink = document.createElement('a');
+  dashboardLink.href = './dashboard/';
+  dashboardLink.dataset.dashboardLink = 'true';
+  dashboardLink.textContent = '06 / Dashboard';
+  mobileNav.appendChild(dashboardLink);
+}
+
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const createBackgroundVideo = ({ hostSelector, src, wrapClass, preload = 'metadata' }) => {
@@ -100,7 +119,7 @@ menuToggle?.addEventListener('click', () => {
   document.body.classList.toggle('menu-open', willOpen);
 });
 
-menuLinks.forEach((link) => link.addEventListener('click', closeMenu));
+mobileMenu?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closeMenu();
 });
