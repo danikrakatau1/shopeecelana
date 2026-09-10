@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#11110f" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="description" content="AR STORE Seller Dashboard" />
+  <title>AR STORE® — Seller Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Oswald:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./dashboard.css" />
+</head>
+<body>
+  <div class="dash-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <a class="brand" href="/">AR STORE<sup>®</sup></a>
+        <span class="seller-chip">SELLER</span>
+      </div>
+
+      <nav class="side-nav" aria-label="Seller dashboard">
+        <div class="nav-group">
+          <small>Overview</small>
+          <button class="nav-item active" data-view="overview"><span>01</span>Dashboard</button>
+        </div>
+        <div class="nav-group">
+          <small>Commerce</small>
+          <button class="nav-item" data-view="products"><span>02</span>Products</button>
+          <button class="nav-item" data-view="orders"><span>03</span>Orders</button>
+          <button class="nav-item" data-view="stock"><span>04</span>Stock & Pricing</button>
+          <button class="nav-item" data-view="logistics"><span>05</span>Logistics</button>
+        </div>
+        <div class="nav-group">
+          <small>Performance</small>
+          <button class="nav-item" data-view="ads"><span>06</span>Shopee Ads</button>
+          <button class="nav-item" data-view="finance"><span>07</span>Finance</button>
+        </div>
+        <div class="nav-group">
+          <small>System</small>
+          <button class="nav-item" data-view="connection"><span>08</span>Shopee Connection</button>
+          <button class="nav-item" data-view="settings"><span>09</span>Settings</button>
+        </div>
+      </nav>
+
+      <div class="side-foot">
+        <div class="connection-mini">
+          <span class="status-dot warning"></span>
+          <div><strong>Shopee API</strong><small>Belum terhubung</small></div>
+        </div>
+        <a href="/" class="back-link">← Kembali ke storefront</a>
+      </div>
+    </aside>
+
+    <main class="dashboard-main">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="Buka menu" aria-controls="sidebar" aria-expanded="false">☰</button>
+        <div class="topbar-title">
+          <span>AR STORE / SELLER CONTROL</span>
+          <strong id="viewTitle">Overview</strong>
+        </div>
+        <div class="topbar-actions">
+          <span class="demo-badge">DEMO DATA</span>
+          <button class="icon-button" type="button" aria-label="Notifikasi">○</button>
+          <div class="profile"><span>AR</span><div><strong>Owner</strong><small>Seller Admin</small></div></div>
+        </div>
+      </header>
+
+      <section class="view active" data-panel="overview">
+        <div class="page-intro">
+          <div><span class="eyebrow">01 / Overview</span><h1>Good afternoon.<br><em>Here’s the store.</em></h1></div>
+          <p>Ringkasan operasional AR STORE. Nilai di bawah masih dummy sampai Shopee Open Platform dihubungkan.</p>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card hero-metric"><small>Revenue Today</small><strong>Rp 4.850.000</strong><div class="delta positive">↑ 18.4% vs yesterday</div></article>
+          <article class="metric-card"><small>Orders</small><strong>47</strong><div class="delta">63 units sold</div></article>
+          <article class="metric-card"><small>Ad Spend</small><strong>Rp 620K</strong><div class="delta">12.8% of revenue</div></article>
+          <article class="metric-card"><small>ROAS</small><strong>7.82×</strong><div class="delta positive">Healthy</div></article>
+          <article class="metric-card"><small>Estimated Profit</small><strong>Rp 1.74M</strong><div class="delta positive">35.9% margin</div></article>
+        </div>
+
+        <div class="dashboard-grid two-one">
+          <article class="panel chart-panel">
+            <div class="panel-head"><div><span class="eyebrow">Sales performance</span><h2>7 Day Revenue</h2></div><button class="text-button">Last 7 days⌄</button></div>
+            <div class="chart-wrap" aria-label="Dummy sales chart">
+              <svg viewBox="0 0 760 260" role="img" aria-label="Revenue chart demo">
+                <path class="grid-line" d="M20 45H740M20 105H740M20 165H740M20 225H740" />
+                <path class="area" d="M20 214 C95 190 120 205 175 164 S278 195 330 131 S430 151 490 92 S605 112 740 38 L740 240 L20 240 Z" />
+                <path class="line" d="M20 214 C95 190 120 205 175 164 S278 195 330 131 S430 151 490 92 S605 112 740 38" />
+                <circle cx="740" cy="38" r="5" class="point" />
+              </svg>
+              <div class="chart-days"><span>04 Sep</span><span>05 Sep</span><span>06 Sep</span><span>07 Sep</span><span>08 Sep</span><span>09 Sep</span><span>Today</span></div>
+            </div>
+          </article>
+
+          <article class="panel health-panel">
+            <div class="panel-head"><div><span class="eyebrow">Store health</span><h2>Today</h2></div><span class="health-score">86</span></div>
+            <div class="health-list">
+              <div><span>Conversion</span><strong>4.8%</strong></div>
+              <div><span>Cancelled</span><strong>1.2%</strong></div>
+              <div><span>Avg. order</span><strong>Rp103K</strong></div>
+              <div><span>Ad efficiency</span><strong class="good">Good</strong></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="dashboard-grid equal">
+          <article class="panel">
+            <div class="panel-head"><div><span class="eyebrow">Orders</span><h2>Recent Orders</h2></div><button class="text-button" data-jump="orders">View all →</button></div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Order</th><th>Item</th><th>Total</th><th>Status</th></tr></thead><tbody>
+                <tr><td>#AR1048</td><td>Essential Chino</td><td>Rp129K</td><td><span class="tag success">Paid</span></td></tr>
+                <tr><td>#AR1047</td><td>Utility Cargo</td><td>Rp169K</td><td><span class="tag info">Packed</span></td></tr>
+                <tr><td>#AR1046</td><td>Daily Straight</td><td>Rp139K</td><td><span class="tag warning">To ship</span></td></tr>
+                <tr><td>#AR1045</td><td>Weekend Short</td><td>Rp99K</td><td><span class="tag success">Paid</span></td></tr>
+              </tbody></table>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><div><span class="eyebrow">Ads</span><h2>Campaign Signals</h2></div><button class="text-button" data-jump="ads">Open ads →</button></div>
+            <div class="campaign-list compact">
+              <div><div><strong>Essential Chino</strong><small>ROAS 9.2×</small></div><span class="status-pill profit">PROFIT</span></div>
+              <div><div><strong>Utility Cargo</strong><small>ROAS 6.2×</small></div><span class="status-pill profit">PROFIT</span></div>
+              <div><div><strong>Daily Straight</strong><small>ROAS 2.3×</small></div><span class="status-pill warn">WARNING</span></div>
+              <div><div><strong>Boardshort</strong><small>ROAS 0.86×</small></div><span class="status-pill loss">LOSS</span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" data-panel="products">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">02 / Commerce</span><h1>Products.</h1></div><p>Kelola katalog, varian, harga, dan status produk dari satu tempat setelah Product API aktif.</p></div>
+        <div class="panel"><div class="panel-head"><div><h2>Product Catalog</h2><span class="muted">24 active / 3 draft</span></div><button class="solid-button">+ Add product</button></div>
+          <div class="product-list">
+            <div class="product-row"><div class="product-thumb">01</div><div><strong>Essential Chino 01</strong><small>4 variants · SKU CHN-01</small></div><span>Rp129.000</span><span>184 stock</span><span class="tag success">Active</span><button>•••</button></div>
+            <div class="product-row"><div class="product-thumb">02</div><div><strong>Utility Cargo 02</strong><small>5 variants · SKU CRG-02</small></div><span>Rp169.000</span><span>96 stock</span><span class="tag success">Active</span><button>•••</button></div>
+            <div class="product-row"><div class="product-thumb">03</div><div><strong>Daily Straight 03</strong><small>3 variants · SKU DST-03</small></div><span>Rp139.000</span><span>42 stock</span><span class="tag warning">Low stock</span><button>•••</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-panel="orders">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">03 / Commerce</span><h1>Orders.</h1></div><p>Pesanan, status fulfillment, dan shipment akan ditarik dari Order API.</p></div>
+        <div class="metrics-grid four"><article class="metric-card"><small>To Pay</small><strong>8</strong></article><article class="metric-card"><small>To Ship</small><strong>21</strong></article><article class="metric-card"><small>Shipping</small><strong>36</strong></article><article class="metric-card"><small>Completed</small><strong>1,284</strong></article></div>
+        <div class="panel"><div class="panel-head"><div><h2>Order Queue</h2><span class="muted">Demo operational view</span></div><button class="text-button">Filter⌄</button></div><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Product</th><th>Amount</th><th>Logistics</th><th>Status</th></tr></thead><tbody><tr><td>#AR1048</td><td>Customer A</td><td>Essential Chino</td><td>Rp129K</td><td>SPX</td><td><span class="tag success">Paid</span></td></tr><tr><td>#AR1047</td><td>Customer B</td><td>Utility Cargo</td><td>Rp169K</td><td>J&T</td><td><span class="tag info">Packed</span></td></tr><tr><td>#AR1046</td><td>Customer C</td><td>Daily Straight</td><td>Rp139K</td><td>SPX</td><td><span class="tag warning">To ship</span></td></tr></tbody></table></div></div>
+      </section>
+
+      <section class="view" data-panel="stock">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">04 / Commerce</span><h1>Stock & Pricing.</h1></div><p>Monitor stok rendah, variasi, serta harga aktif. Update langsung baru diaktifkan setelah permission API dikonfirmasi.</p></div>
+        <div class="dashboard-grid equal"><div class="panel"><div class="panel-head"><h2>Low Stock</h2><span class="status-pill warn">3 SKU</span></div><div class="health-list"><div><span>DST-03 / Black / 30</span><strong>4 left</strong></div><div><span>CRG-02 / Olive / 32</span><strong>7 left</strong></div><div><span>CHN-01 / Khaki / 29</span><strong>9 left</strong></div></div></div><div class="panel"><div class="panel-head"><h2>Pricing Monitor</h2><span class="muted">Demo</span></div><div class="health-list"><div><span>Average price</span><strong>Rp139K</strong></div><div><span>Discounted SKUs</span><strong>6</strong></div><div><span>Price alerts</span><strong>0</strong></div></div></div></div>
+      </section>
+
+      <section class="view" data-panel="logistics">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">05 / Commerce</span><h1>Logistics.</h1></div><p>Shipment readiness, tracking, dan SLA pengiriman.</p></div>
+        <div class="metrics-grid four"><article class="metric-card"><small>Ready to ship</small><strong>21</strong></article><article class="metric-card"><small>In transit</small><strong>36</strong></article><article class="metric-card"><small>Delivered today</small><strong>42</strong></article><article class="metric-card"><small>SLA risk</small><strong>2</strong><div class="delta negative">Needs attention</div></article></div>
+      </section>
+
+      <section class="view" data-panel="ads">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">06 / Performance</span><h1>Shopee Ads.</h1></div><p>Analisis campaign: spend, GMV, ROAS, estimasi laba, dan sinyal tindakan. Aktivasi bergantung pada Ads API permission.</p></div>
+        <div class="metrics-grid four"><article class="metric-card"><small>Spend Today</small><strong>Rp620K</strong></article><article class="metric-card"><small>Attributed Sales</small><strong>Rp4.85M</strong></article><article class="metric-card"><small>ROAS</small><strong>7.82×</strong></article><article class="metric-card"><small>Profit Signal</small><strong>3 / 4</strong><div class="delta positive">Healthy campaigns</div></article></div>
+        <div class="panel"><div class="panel-head"><div><h2>Campaign Performance</h2><span class="muted">Demo classification</span></div><button class="text-button">Today⌄</button></div><div class="campaign-table">
+          <div class="campaign-head"><span>Campaign</span><span>Spend</span><span>Sales</span><span>ROAS</span><span>Est. Profit</span><span>Signal</span></div>
+          <div class="campaign-row"><strong>Essential Chino</strong><span>Rp120K</span><span>Rp1.10M</span><span>9.2×</span><span>+Rp342K</span><span class="status-pill profit">PROFIT</span></div>
+          <div class="campaign-row"><strong>Utility Cargo</strong><span>Rp210K</span><span>Rp1.30M</span><span>6.2×</span><span>+Rp281K</span><span class="status-pill profit">PROFIT</span></div>
+          <div class="campaign-row"><strong>Daily Straight</strong><span>Rp180K</span><span>Rp420K</span><span>2.3×</span><span>+Rp18K</span><span class="status-pill warn">WARNING</span></div>
+          <div class="campaign-row"><strong>Boardshort</strong><span>Rp110K</span><span>Rp95K</span><span>0.86×</span><span>−Rp64K</span><span class="status-pill loss">LOSS</span></div>
+        </div></div>
+      </section>
+
+      <section class="view" data-panel="finance">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">07 / Performance</span><h1>Finance.</h1></div><p>Revenue, biaya marketplace, biaya iklan, HPP, dan estimasi profit dalam satu reconciliation view.</p></div>
+        <div class="dashboard-grid equal"><article class="panel finance-card"><span class="eyebrow">Revenue</span><strong>Rp4.850.000</strong><div class="finance-line"><span>Marketplace fees</span><b>− Rp412K</b></div><div class="finance-line"><span>Ad spend</span><b>− Rp620K</b></div><div class="finance-line"><span>Estimated COGS</span><b>− Rp2.078M</b></div><div class="finance-total"><span>Estimated profit</span><strong>Rp1.740M</strong></div></article><article class="panel"><div class="panel-head"><h2>Margin Snapshot</h2><span class="health-score">35.9%</span></div><div class="health-list"><div><span>Gross margin</span><strong>61.2%</strong></div><div><span>Ad cost ratio</span><strong>12.8%</strong></div><div><span>Fee ratio</span><strong>8.5%</strong></div><div><span>Net est. margin</span><strong class="good">35.9%</strong></div></div></article></div>
+      </section>
+
+      <section class="view" data-panel="connection">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">08 / System</span><h1>Shopee Connection.</h1></div><p>Di sinilah nanti authorization resmi Shopee Open Platform, token status, scopes, dan webhook health ditampilkan.</p></div>
+        <div class="connection-card panel"><div class="connection-hero"><span class="status-dot warning"></span><div><span class="eyebrow">Current status</span><h2>Not connected yet.</h2><p>UI dashboard sudah siap. Tahap berikutnya adalah menghubungkan app Shopee melalui endpoint Cloudflare Worker server-side.</p></div></div><button class="solid-button" type="button" disabled>Connect Shopee — next phase</button><div class="connection-grid"><div><small>Partner ID</small><strong>Not configured</strong></div><div><small>Access Token</small><strong>Not available</strong></div><div><small>Refresh Token</small><strong>Not available</strong></div><div><small>Webhook</small><strong>Not configured</strong></div></div></div>
+      </section>
+
+      <section class="view" data-panel="settings">
+        <div class="page-intro compact-intro"><div><span class="eyebrow">09 / System</span><h1>Settings.</h1></div><p>Konfigurasi toko, target margin, HPP, dan aturan klasifikasi profit.</p></div>
+        <div class="dashboard-grid equal"><div class="panel form-panel"><h2>Store</h2><label>Store name<input value="AR STORE" /></label><label>Marketplace<input value="Shopee Indonesia" disabled /></label><label>Currency<input value="IDR" disabled /></label></div><div class="panel form-panel"><h2>Profit Rules</h2><label>Target net margin<input value="25%" /></label><label>Warning ROAS<input value="2.50" /></label><label>Healthy ROAS<input value="4.00" /></label><button class="solid-button">Save demo settings</button></div></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  <script src="./dashboard.js" defer></script>
+</body>
+</html>
