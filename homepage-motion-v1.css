@@ -144,10 +144,11 @@
 .motion-v1-ready .motion-why .section-head{transform:scale(.97);transform-origin:left bottom;transition:opacity 700ms var(--motion-ease),transform 920ms var(--motion-ease)}
 .motion-v1-ready .motion-why.is-motion-in .section-head{transform:none}
 .motion-v1-ready .motion-why .why-item{
-  opacity:0;transform:translateY(calc((var(--i,0) % 2) * 22px + 26px));
+  opacity:0;transform:translateY(26px);
   transition:opacity 620ms var(--motion-ease),transform 880ms var(--motion-ease);
   transition-delay:calc(var(--i,0) * 90ms + 100ms);
 }
+.motion-v1-ready .motion-why .why-item:nth-child(even){transform:translateY(44px)}
 .motion-v1-ready .motion-why.is-motion-in .why-item{opacity:1;transform:none}
 
 /* 07 / LOOKBOOK — four deliberately different wipes. */
@@ -193,6 +194,25 @@
 .motion-v1-ready .motion-footer.is-motion-in .footer-top h3,.motion-v1-ready .motion-footer.is-motion-in .footer-links a,.motion-v1-ready .motion-footer.is-motion-in .footer-giant{opacity:1;transform:none;clip-path:inset(0)}
 .motion-v1-ready .motion-footer.is-motion-in .footer-giant{letter-spacing:-.055em}
 
+/* MOBILE MENU — staggered links and reversible menu icon. */
+.motion-v1-ready .mobile-menu nav a{
+  opacity:0;
+  transform:translateY(22px);
+  transition:opacity 460ms var(--motion-ease),transform 680ms var(--motion-ease);
+}
+.motion-v1-ready .mobile-menu.motion-menu-open nav a{
+  opacity:1;
+  transform:none;
+  transition-delay:calc(var(--i,0) * 58ms + 110ms);
+}
+.motion-v1-ready .menu-toggle span:first-child,
+.motion-v1-ready .menu-toggle span:last-child{
+  transform-origin:center;
+  transition:transform 420ms var(--motion-ease),opacity 300ms var(--motion-ease);
+}
+.motion-v1-ready .menu-toggle[aria-expanded="true"] span:first-child{transform:translateY(3px) rotate(45deg)}
+.motion-v1-ready .menu-toggle[aria-expanded="true"] span:last-child{transform:translateY(-3px) rotate(-45deg)}
+
 /* MICRO INTERACTION — restrained, editorial, and pointer-aware. */
 @media (pointer:fine){
   .motion-v1-ready .product-card .product-media{transition:transform 900ms var(--motion-ease),filter 700ms var(--motion-ease)}
@@ -221,7 +241,7 @@
 
 /* Accessibility: motion is optional, content is never withheld. */
 @media(prefers-reduced-motion:reduce){
-  .motion-v1-ready :where(.site-header,.hero-kicker,.hero-year,.hero-display,.hero-copy,.hero-bottom>.cta-arrow,.marquee,.motion-section .section-head,.motion-section .product-card,.motion-section .fit-row,.motion-section .slide,.motion-section .lookbook-card,.motion-section .why-item,.motion-section .rating,.motion-section .quote,.motion-section .feature-point,.motion-section p,.motion-section h2,.motion-footer .footer-top h3,.motion-footer .footer-links a,.motion-footer .footer-giant){
+  .motion-v1-ready :where(.site-header,.hero-kicker,.hero-year,.hero-display,.hero-copy,.hero-bottom>.cta-arrow,.marquee,.motion-section .section-head,.motion-section .product-card,.motion-section .fit-row,.motion-section .slide,.motion-section .lookbook-card,.motion-section .why-item,.motion-section .rating,.motion-section .quote,.motion-section .feature-point,.motion-section p,.motion-section h2,.motion-footer .footer-top h3,.motion-footer .footer-links a,.motion-footer .footer-giant,.mobile-menu nav a){
     opacity:1!important;transform:none!important;clip-path:none!important;letter-spacing:inherit!important;transition:none!important;animation:none!important;
   }
   .motion-v1-ready .marquee-track{animation:none!important}
