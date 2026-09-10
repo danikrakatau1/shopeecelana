@@ -72,6 +72,14 @@ const formatIDR = (value) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
 };
 
+const formatProductPrice = (product) => {
+  const min = Number(product?.priceMin ?? product?.price ?? 0);
+  const max = Number(product?.priceMax ?? product?.price ?? 0);
+  if (!Number.isFinite(min) || min <= 0) return '—';
+  if (!Number.isFinite(max) || max <= 0 || min === max) return formatIDR(min);
+  return `${formatIDR(min)} – ${formatIDR(max)}`;
+};
+
 const renderConnectionCenter = () => {
   const panel = document.querySelector('[data-panel="connection"]');
   if (!panel) return;
@@ -131,17 +139,17 @@ const renderProductsCenter = () => {
   panel.innerHTML = `
     <div class="page-intro compact-intro">
       <div><span class="eyebrow">02 / Commerce</span><h1>Products.</h1></div>
-      <p>Data produk dibaca langsung dari Shopee Open Platform. Dashboard tidak lagi memakai katalog dummy untuk halaman ini.</p>
+      <p>Data produk, variant, harga, dan stok dibaca langsung dari Shopee Open Platform.</p>
     </div>
     <div class="live-strip"><div><span class="live-dot"></span><strong>SHOPEE LIVE DATA</strong><small id="productShopId">Waiting for connection</small></div><button id="syncProducts" class="ghost-button" type="button">Sync now ↻</button></div>
     <div class="metrics-grid four product-metrics">
       <article class="metric-card"><small>Total products</small><strong id="productTotal">—</strong></article>
-      <article class="metric-card"><small>Loaded</small><strong id="productLoaded">—</strong></article>
-      <article class="metric-card"><small>Low stock</small><strong id="productLowStock">—</strong></article>
+      <article class="metric-card"><small>Variants loaded</small><strong id="productLoaded">—</strong></article>
+      <article class="metric-card"><small>Low-stock variants</small><strong id="productLowStock">—</strong></article>
       <article class="metric-card"><small>Token</small><strong id="productTokenState" class="product-token-state">AUTO</strong><div class="delta positive">Auto refresh enabled</div></article>
     </div>
     <article class="panel product-live-panel">
-      <div class="panel-head"><div><span class="eyebrow">Shopee catalog</span><h2>Real Product Sync</h2><span id="productStatus" class="muted">Ready to sync.</span></div><span id="productSource" class="connection-state connected">API V2</span></div>
+      <div class="panel-head"><div><span class="eyebrow">Shopee catalog</span><h2>Product + Variant Sync</h2><span id="productStatus" class="muted">Ready to sync.</span></div><span id="productSource" class="connection-state connected">API V2</span></div>
       <div id="productLiveList" class="product-live-list"><div class="product-empty">Loading Shopee products…</div></div>
     </article>`;
   document.getElementById('syncProducts')?.addEventListener('click', () => loadProducts(true));
@@ -212,16 +220,39 @@ async function testShopInfo() {
   finally { if (button) button.disabled = false; }
 }
 
+const variantRow = (variant, index) => {
+  const status = String(variant?.status || 'NORMAL').toUpperCase();
+  const low = Number(variant?.stock) <= 10;
+  const optionText = Array.isArray(variant?.options) && variant.options.length
+    ? variant.options.map((option) => `${option.tier}: ${option.value}`).join(' · ')
+    : variant?.name || `Variant ${index + 1}`;
+  return `<div class="variant-live-row">
+    <div class="variant-index">V${String(index + 1).padStart(2, '0')}</div>
+    <div class="variant-main"><strong>${escapeHtml(variant?.name || `Variant ${index + 1}`)}</strong><small>${escapeHtml(optionText)} · SKU ${escapeHtml(variant?.sku || '—')}</small></div>
+    <div><small>Price</small><strong>${formatIDR(variant?.price)}</strong></div>
+    <div><small>Stock</small><strong class="${low ? 'stock-low' : ''}">${escapeHtml(variant?.stock ?? 0)}</strong></div>
+    <div><span class="tag ${status === 'NORMAL' ? 'success' : 'warning'}">${escapeHtml(status)}</span></div>
+  </div>`;
+};
+
 const productRow = (product, index) => {
   const status = String(product.status || 'NORMAL').toUpperCase();
-  const low = Number(product.stock) <= 10;
+  const low = product.variantCount > 0 ? Number(product.lowStockVariantCount) > 0 : Number(product.stock) <= 10;
   const statusClass = status === 'NORMAL' ? 'success' : 'warning';
-  return `<div class="product-live-row">
-    <div class="product-thumb live">${String(index + 1).padStart(2, '0')}</div>
-    <div class="product-main"><strong>${escapeHtml(product.name)}</strong><small>Item ${escapeHtml(product.itemId)} · SKU ${escapeHtml(product.sku)}${product.hasModel ? ' · variants' : ''}</small></div>
-    <div><small>Price</small><strong>${formatIDR(product.price)}</strong></div>
-    <div><small>Stock</small><strong class="${low ? 'stock-low' : ''}">${escapeHtml(product.stock)}</strong></div>
-    <div><span class="tag ${statusClass}">${escapeHtml(status)}</span></div>
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const variantLabel = product.hasModel ? ` · ${product.variantCount || variants.length} variants` : '';
+  const variantError = product.variantError
+    ? `<div class="variant-warning">Variant detail belum terbaca: ${escapeHtml(product.variantError)}</div>`
+    : '';
+  return `<div class="product-live-item">
+    <div class="product-live-row">
+      <div class="product-thumb live">${String(index + 1).padStart(2, '0')}</div>
+      <div class="product-main"><strong>${escapeHtml(product.name)}</strong><small>Item ${escapeHtml(product.itemId)} · SKU ${escapeHtml(product.sku)}${variantLabel}</small></div>
+      <div><small>Price</small><strong>${formatProductPrice(product)}</strong></div>
+      <div><small>Total stock</small><strong class="${low ? 'stock-low' : ''}">${escapeHtml(product.stock)}</strong></div>
+      <div><span class="tag ${statusClass}">${escapeHtml(status)}</span></div>
+    </div>
+    ${variants.length ? `<div class="variant-live-list"><div class="variant-head"><span>MODEL VARIANTS</span><strong>${variants.length} synced</strong></div>${variants.map(variantRow).join('')}</div>` : variantError}
   </div>`;
 };
 
@@ -232,8 +263,8 @@ async function loadProducts(force = false) {
   const status = document.getElementById('productStatus');
   const list = document.getElementById('productLiveList');
   if (syncButton) { syncButton.disabled = true; syncButton.textContent = 'Syncing…'; }
-  if (status) status.textContent = 'Reading Shopee Product API…';
-  if (list && !productsLoaded) list.innerHTML = '<div class="product-empty">Loading Shopee products…</div>';
+  if (status) status.textContent = 'Reading Shopee Product + Model APIs…';
+  if (list && !productsLoaded) list.innerHTML = '<div class="product-empty">Loading Shopee products and variants…</div>';
   try {
     const response = await fetch('/api/shopee/products?page_size=50&offset=0&item_status=NORMAL', { credentials: 'same-origin', cache: 'no-store' });
     const data = await response.json();
@@ -244,13 +275,17 @@ async function loadProducts(force = false) {
     }
     if (!response.ok) throw new Error(data.message || data.error || 'product_sync_failed');
     const products = Array.isArray(data.products) ? data.products : [];
-    const lowStock = products.filter((product) => Number(product.stock) <= 10).length;
+    const variantsLoaded = Number(data.variantCount ?? products.reduce((sum, product) => sum + Number(product.variantCount || 0), 0));
+    const lowStock = Number(data.lowStockVariantCount ?? products.filter((product) => Number(product.stock) <= 10).length);
     document.getElementById('productTotal').textContent = String(data.totalCount ?? products.length);
-    document.getElementById('productLoaded').textContent = String(products.length);
+    document.getElementById('productLoaded').textContent = String(data.variantEnrichment ? variantsLoaded : products.length);
     document.getElementById('productLowStock').textContent = String(lowStock);
     document.getElementById('productShopId').textContent = `Shop ID ${data.shopId}`;
     document.getElementById('productTokenState').textContent = data.tokenRefreshed ? 'REFRESHED' : 'AUTO';
-    if (status) status.textContent = `${products.length} product(s) loaded from Shopee${data.hasNextPage ? ' · more available' : ''}.`;
+    const variantCopy = data.variantEnrichment ? ` · ${variantsLoaded} variant(s) synced` : '';
+    if (status) status.textContent = `${products.length} product(s) loaded from Shopee${variantCopy}${data.hasNextPage ? ' · more available' : ''}.`;
+    const source = document.getElementById('productSource');
+    if (source) source.textContent = data.variantEnrichment ? 'API V2 + MODELS' : 'API V2';
     if (list) list.innerHTML = products.length ? products.map(productRow).join('') : '<div class="product-empty"><strong>No NORMAL products in sandbox.</strong><span>Create or seed a test product in Shopee Sandbox, then press Sync now.</span></div>';
     if (data.tokenRefreshed) { showToast('Token refreshed automatically during product sync.'); shopeeStatusLoaded = false; }
     productsLoaded = true;
