@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#11110f" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="description" content="AR STORE Seller Login" />
+  <title>AR STORE® — Seller Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Oswald:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./login.css" />
+  <script src="./login.js" defer></script>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-brand" aria-label="AR STORE Seller Control">
+      <a class="brand" href="/">AR STORE<sup>®</sup></a>
+      <div class="brand-copy">
+        <span class="eyebrow">PRIVATE SELLER ACCESS</span>
+        <h1>Seller<br><span>Control.</span></h1>
+        <p>Dashboard operasional AR STORE untuk produk, order, stok, performa, finance, dan koneksi Shopee Open Platform.</p>
+      </div>
+      <div class="brand-foot"><span>AR STORE / SELLER</span><span>SECURE AREA</span></div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-card">
+        <div class="card-head">
+          <span class="eyebrow">OWNER AUTHENTICATION</span>
+          <h2>Masuk ke dashboard.</h2>
+          <p>Gunakan kredensial seller yang disimpan di Cloudflare Secret. Password tidak disimpan di browser.</p>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <label>
+            <span>Username</span>
+            <input id="username" name="username" type="text" value="owner" autocomplete="username" required />
+          </label>
+          <label>
+            <span>Password</span>
+            <div class="password-field">
+              <input id="password" name="password" type="password" autocomplete="current-password" required autofocus />
+              <button id="togglePassword" type="button" aria-label="Tampilkan password">SHOW</button>
+            </div>
+          </label>
+
+          <div id="loginMessage" class="login-message" role="status" aria-live="polite"></div>
+          <button id="loginButton" class="login-button" type="submit"><span>Enter Seller Dashboard</span><span>→</span></button>
+        </form>
+
+        <div class="security-note">
+          <span class="status-dot"></span>
+          <p><strong>Server-side session.</strong> Login dibuat lewat Cloudflare Worker dengan cookie HttpOnly + Secure.</p>
+        </div>
+      </div>
+      <a class="back-link" href="/">← Kembali ke AR STORE</a>
+    </section>
+  </main>
+</body>
+</html>
