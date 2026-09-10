@@ -3,6 +3,14 @@
   "name": "shopeecelana",
   "main": "./src/worker-v3.js",
   "compatibility_date": "2026-09-10",
+  "keep_vars": true,
+  "secrets": {
+    "required": [
+      "SELLER_PASSWORD",
+      "SESSION_SECRET",
+      "SHOPEE_PARTNER_KEY"
+    ]
+  },
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
