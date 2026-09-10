@@ -1,0 +1,50 @@
+/* AR STORE Seller Dashboard — Final Live Shell V1 */
+
+/* Truthful server-rendered shells shown only until each live module hydrates. */
+.live-panel-shell{
+  min-height:260px;
+  display:grid;
+  place-items:center;
+  padding:28px;
+}
+.live-panel-shell-inner{
+  width:min(560px,100%);
+  display:grid;
+  justify-items:center;
+  gap:9px;
+  text-align:center;
+}
+.live-panel-shell-dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--good);
+  box-shadow:0 0 0 5px rgba(84,184,107,.12);
+  animation:liveShellPulse 1.7s ease-in-out infinite;
+}
+.live-panel-shell strong{
+  font:500 clamp(22px,2.4vw,34px)/1 'Oswald',sans-serif;
+  text-transform:uppercase;
+  letter-spacing:-.025em;
+}
+.live-panel-shell small{
+  max-width:420px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.55;
+}
+@keyframes liveShellPulse{50%{transform:scale(.72);opacity:.55}}
+
+/* Server-side final sweep owns the top badge; never present it as demo data. */
+.demo-badge{
+  background:rgba(84,184,107,.12)!important;
+  color:#2f7c41!important;
+  border:1px solid rgba(84,184,107,.2);
+}
+
+@media(max-width:640px){
+  .live-panel-shell{min-height:210px;padding:18px 10px}
+  .live-panel-shell strong{font-size:clamp(24px,8vw,32px)}
+  .live-panel-shell small{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.live-panel-shell-dot{animation:none}}
