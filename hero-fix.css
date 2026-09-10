@@ -440,3 +440,127 @@
     animation: none !important;
   }
 }
+
+/* AR STORE V1.9 — three-item refinement pass. */
+
+/* 01 / Hero Video 01 — Cream Cinematic Editorial.
+   Keep the locked layout, soften the footage, and create a directional light pocket for copy. */
+.hero-display {
+  font-size: clamp(88px, 16vw, 238px);
+}
+
+.hero-video-wrap video {
+  object-fit: cover;
+  transform: scale(1.005);
+  opacity: .36;
+  filter: brightness(.80) contrast(.90) saturate(.62);
+}
+
+.hero-video-wrap::after {
+  background:
+    linear-gradient(90deg,
+      rgba(241,239,232,.62) 0%,
+      rgba(241,239,232,.36) 34%,
+      rgba(241,239,232,.14) 62%,
+      rgba(241,239,232,.38) 100%),
+    linear-gradient(0deg,
+      rgba(241,239,232,.56) 0%,
+      rgba(241,239,232,.22) 32%,
+      rgba(241,239,232,.06) 58%,
+      rgba(241,239,232,.18) 100%),
+    radial-gradient(circle at 50% 45%,
+      rgba(241,239,232,.02) 0 30%,
+      rgba(229,224,214,.14) 68%,
+      rgba(203,196,185,.26) 100%);
+}
+
+/* 02 / Video 02 — full-frame cinematic placement.
+   The source frame stays visible instead of being enlarged/cropped by object-fit: cover. */
+.shopee-video-wrap {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 45%, #746963 0%, #625752 58%, #4d4440 100%);
+}
+
+.shopee-video-wrap video {
+  width: 94%;
+  height: 94%;
+  object-fit: contain;
+  object-position: center center;
+  transform: none;
+  opacity: .50;
+  filter: brightness(.68) contrast(.94) saturate(.72);
+}
+
+.shopee-video-wrap::after {
+  background:
+    radial-gradient(circle at 50% 44%,
+      rgba(108,96,90,.02) 0 28%,
+      rgba(52,45,42,.26) 72%,
+      rgba(37,32,30,.56) 100%),
+    linear-gradient(180deg,
+      rgba(58,49,46,.18) 0%,
+      rgba(58,49,46,.26) 56%,
+      rgba(34,29,27,.58) 100%),
+    rgba(108,96,90,.12);
+}
+
+/* 03 / Footer — reduce both editorial type blocks another step. */
+.footer-top h3 {
+  max-width: 590px;
+  font-size: clamp(30px, 3.35vw, 52px);
+  line-height: .94;
+  letter-spacing: -.025em;
+}
+
+.footer-giant {
+  margin-top: clamp(48px, 5.5vw, 72px);
+  margin-bottom: 26px;
+  font-size: clamp(72px, 10vw, 160px);
+  line-height: .80;
+  letter-spacing: -.045em;
+}
+
+@media (max-width: 900px) {
+  .hero-display {
+    font-size: clamp(72px, 23vw, 156px);
+  }
+
+  .hero-video-wrap video {
+    opacity: .32;
+    transform: none;
+  }
+
+  .shopee-video-wrap video {
+    width: 96%;
+    height: 96%;
+    opacity: .46;
+  }
+
+  .footer-top h3 {
+    font-size: clamp(32px, 6.7vw, 50px);
+  }
+
+  .footer-giant {
+    font-size: clamp(68px, 16vw, 120px);
+    margin-top: 52px;
+  }
+}
+
+@media (max-width: 560px) {
+  .footer-top h3 {
+    font-size: clamp(30px, 9vw, 42px);
+  }
+
+  .footer-giant {
+    font-size: clamp(62px, 19vw, 96px);
+    margin-top: 46px;
+  }
+
+  .shopee-video-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
