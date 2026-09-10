@@ -4,6 +4,67 @@ const mobileMenu = document.querySelector('.mobile-menu');
 const menuLinks = mobileMenu ? mobileMenu.querySelectorAll('a') : [];
 const cursor = document.querySelector('.cursor');
 
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+const createBackgroundVideo = ({ hostSelector, src, wrapClass, preload = 'metadata' }) => {
+  const host = document.querySelector(hostSelector);
+  if (!host) return null;
+
+  const wrap = document.createElement('div');
+  wrap.className = wrapClass;
+  wrap.setAttribute('aria-hidden', 'true');
+
+  const video = document.createElement('video');
+  video.src = src;
+  video.muted = true;
+  video.loop = true;
+  video.playsInline = true;
+  video.preload = preload;
+  video.disablePictureInPicture = true;
+  video.setAttribute('muted', '');
+  video.setAttribute('playsinline', '');
+  video.setAttribute('disablepictureinpicture', '');
+  video.setAttribute('tabindex', '-1');
+
+  video.addEventListener('error', () => wrap.remove(), { once: true });
+  wrap.appendChild(video);
+  host.insertBefore(wrap, host.firstChild);
+
+  return { host, wrap, video };
+};
+
+const heroVideo = createBackgroundVideo({
+  hostSelector: '.hero',
+  src: './assets/video/arstore%201.mp4',
+  wrapClass: 'hero-video-wrap',
+  preload: 'auto'
+});
+
+const shopeeVideo = createBackgroundVideo({
+  hostSelector: '.shopee-bridge',
+  src: './assets/video/arstore%202.mp4',
+  wrapClass: 'shopee-video-wrap',
+  preload: 'metadata'
+});
+
+const managedVideos = [heroVideo, shopeeVideo].filter(Boolean);
+if (managedVideos.length && !prefersReducedMotion.matches) {
+  const videoObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const item = managedVideos.find((candidate) => candidate.host === entry.target);
+      if (!item) return;
+
+      if (entry.isIntersecting) {
+        item.video.play().catch(() => {});
+      } else {
+        item.video.pause();
+      }
+    });
+  }, { rootMargin: '20% 0px 20% 0px', threshold: 0.01 });
+
+  managedVideos.forEach((item) => videoObserver.observe(item.host));
+}
+
 const setHeaderState = () => {
   header?.classList.toggle('scrolled', window.scrollY > 24);
 };
@@ -66,7 +127,7 @@ const renderParallax = () => {
 };
 
 window.addEventListener('scroll', () => {
-  if (!ticking && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!ticking && !prefersReducedMotion.matches) {
     window.requestAnimationFrame(renderParallax);
     ticking = true;
   }
