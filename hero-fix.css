@@ -1,0 +1,221 @@
+/* AR STORE V1.1 — hero composition hotfix
+   Keeps the editorial layering, but reserves a real safe-zone for copy + CTA. */
+
+.hero {
+  min-height: max(100svh, 760px);
+  padding: 110px var(--page) clamp(34px, 4.5vh, 58px);
+  isolation: isolate;
+}
+
+.hero-kicker,
+.hero-year {
+  z-index: 6;
+}
+
+.hero-display {
+  top: 19%;
+  z-index: 1;
+  font-size: clamp(92px, 17vw, 255px);
+  line-height: .78;
+}
+
+.hero-art {
+  left: 66%;
+  top: 38%;
+  width: min(29vw, 390px);
+  max-height: 58svh;
+  z-index: 2;
+}
+
+.hero-bottom {
+  z-index: 5;
+  grid-template-columns: minmax(92px, .34fr) minmax(0, 560px) minmax(210px, 1fr);
+  gap: clamp(22px, 3vw, 46px);
+  align-items: end;
+  width: 100%;
+}
+
+.hero-copy {
+  min-width: 0;
+}
+
+.hero-copy h1 {
+  max-width: 560px;
+  font-size: clamp(42px, 5.2vw, 78px);
+  line-height: .9;
+  text-wrap: balance;
+}
+
+.hero-copy p {
+  max-width: 430px;
+  margin-top: 14px;
+  line-height: 1.45;
+}
+
+.hero-bottom > .cta-arrow {
+  justify-self: end;
+  align-self: end;
+  margin-bottom: 2px;
+}
+
+/* Medium desktop / laptop: artwork gets smaller and higher before copy can collide. */
+@media (max-width: 1180px) {
+  .hero {
+    min-height: max(100svh, 720px);
+  }
+
+  .hero-display {
+    top: 20%;
+    font-size: clamp(84px, 16.5vw, 210px);
+  }
+
+  .hero-art {
+    left: 65%;
+    top: 36.5%;
+    width: min(30vw, 340px);
+  }
+
+  .hero-bottom {
+    grid-template-columns: 82px minmax(0, 500px) 1fr;
+    gap: 22px;
+  }
+
+  .hero-copy h1 {
+    max-width: 500px;
+    font-size: clamp(40px, 5.35vw, 66px);
+  }
+
+  .hero-bottom > .cta-arrow {
+    min-width: 180px;
+  }
+}
+
+/* Tablet: keep the visual above the copy instead of forcing a desktop collision. */
+@media (max-width: 900px) {
+  .hero {
+    min-height: 900px;
+    padding-top: 104px;
+    padding-bottom: 34px;
+  }
+
+  .hero-kicker,
+  .hero-year {
+    top: 102px;
+  }
+
+  .hero-display {
+    top: 18%;
+    font-size: clamp(76px, 18vw, 150px);
+  }
+
+  .hero-art {
+    left: 61%;
+    top: 38%;
+    width: min(42vw, 330px);
+    max-height: none;
+  }
+
+  .hero-bottom {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 18px 24px;
+  }
+
+  .hero-copy {
+    grid-column: 2;
+  }
+
+  .hero-copy h1 {
+    max-width: 620px;
+    font-size: clamp(46px, 8vw, 68px);
+  }
+
+  .hero-bottom > .cta-arrow {
+    grid-column: 2;
+    justify-self: start;
+    min-width: 220px;
+    margin-top: 4px;
+  }
+}
+
+/* Mobile gets its own composition: no desktop overlap logic. */
+@media (max-width: 640px) {
+  .hero {
+    min-height: 920px;
+    padding: 92px var(--page) calc(26px + env(safe-area-inset-bottom));
+  }
+
+  .hero-kicker,
+  .hero-year {
+    top: 88px;
+    font-size: 9px;
+  }
+
+  .hero-display {
+    top: 16%;
+    font-size: clamp(68px, 24vw, 112px);
+    line-height: .76;
+  }
+
+  .hero-art {
+    left: 50%;
+    top: 38%;
+    width: min(72vw, 300px);
+  }
+
+  .hero-art::before {
+    font-size: 58px;
+  }
+
+  .hero-bottom {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .hero-index,
+  .hero-copy,
+  .hero-bottom > .cta-arrow {
+    grid-column: 1;
+  }
+
+  .hero-index {
+    margin-bottom: 2px;
+  }
+
+  .hero-copy h1 {
+    max-width: 94%;
+    font-size: clamp(40px, 12.2vw, 58px);
+    line-height: .91;
+  }
+
+  .hero-copy p {
+    max-width: 94%;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  .hero-bottom > .cta-arrow {
+    justify-self: start;
+    min-width: min(240px, 80vw);
+    margin-top: 8px;
+  }
+}
+
+/* Short laptop screens need extra vertical discipline. */
+@media (min-width: 901px) and (max-height: 760px) {
+  .hero {
+    min-height: 760px;
+  }
+
+  .hero-art {
+    top: 35%;
+    width: min(27vw, 330px);
+  }
+
+  .hero-display {
+    top: 18%;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(40px, 4.7vw, 64px);
+  }
+}
