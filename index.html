@@ -2,13 +2,238 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shopee Celana AR Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f1efe8" />
+  <meta name="description" content="AR STORE — essential trousers for everyday movement." />
+  <title>AR STORE® — Essential Trousers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main>
-    <h1>Shopee Celana AR Store</h1>
-    <p>Repository initialized and ready for Cloudflare deployment.</p>
+  <a class="skip-link" href="#main">Lewati ke konten</a>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="cursor" aria-hidden="true">VIEW</div>
+
+  <header class="site-header" aria-label="Navigasi utama">
+    <a class="brand" href="#top" aria-label="AR STORE beranda">AR STORE<sup>®</sup></a>
+    <nav class="main-nav" aria-label="Desktop">
+      <a href="#collection">Collection</a>
+      <a href="#fit">Fit</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="header-actions">
+      <a class="pill" href="#shopee" data-magnetic>Shop on Shopee <span>↗</span></a>
+      <button class="menu-toggle" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <aside class="mobile-menu" id="mobile-menu" aria-label="Menu mobile">
+    <nav>
+      <a href="#collection">01 / Shop</a>
+      <a href="#fit">02 / Fit</a>
+      <a href="#best">03 / Best</a>
+      <a href="#about">04 / About</a>
+      <a href="#shopee">05 / Shopee</a>
+    </nav>
+    <small>AR STORE® / PEKALONGAN — INDONESIA</small>
+  </aside>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-kicker">New Collection / 2026</div>
+      <div class="hero-year">AR / <span data-year>2026</span></div>
+      <div class="hero-display" aria-hidden="true">
+        <div>AR <span class="outline">STORE</span></div>
+      </div>
+      <div class="hero-art" data-cursor="EXPLORE" aria-label="Area visual produk AR STORE"></div>
+      <div class="hero-bottom">
+        <div class="hero-index">01 / 08<br />SCROLL TO EXPLORE</div>
+        <div class="hero-copy reveal in">
+          <h1 id="hero-title">Essential trousers for everyday movement.</h1>
+          <p>Potongan yang mudah dipakai, nyaman untuk aktivitas harian, dan tetap terlihat clean dari pagi sampai malam.</p>
+        </div>
+        <a class="cta-arrow" href="#collection" data-magnetic>
+          <span>Explore collection</span><span>↓</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>AR STORE — EVERYDAY FIT — ESSENTIAL TROUSERS —</span>
+        <span>AR STORE — EVERYDAY FIT — ESSENTIAL TROUSERS —</span>
+        <span>AR STORE — EVERYDAY FIT — ESSENTIAL TROUSERS —</span>
+        <span>AR STORE — EVERYDAY FIT — ESSENTIAL TROUSERS —</span>
+      </div>
+    </div>
+
+    <section class="section" id="collection" aria-labelledby="collection-title">
+      <header class="section-head reveal">
+        <div class="eyebrow">01 / Featured</div>
+        <h2 class="display-title" id="collection-title">The<br />Essentials.</h2>
+        <p class="section-note">Editorial collection preview. Visual produk asli bisa kita masukkan setelah asset toko dikunci.</p>
+      </header>
+
+      <div class="product-grid">
+        <a class="product-card large reveal" href="#shopee" data-cursor="VIEW">
+          <div class="product-media"><span class="product-badge">Featured</span></div>
+          <div class="product-meta">
+            <div><strong>Essential Chino 01</strong><small>Clean / Daily / Straight</small></div>
+            <div>View ↗</div>
+          </div>
+        </a>
+        <div class="product-stack">
+          <a class="product-card reveal reveal-delay" href="#shopee" data-cursor="VIEW">
+            <div class="product-media"></div>
+            <div class="product-meta">
+              <div><strong>Utility Cargo 02</strong><small>Utility / Relaxed</small></div>
+              <div>View ↗</div>
+            </div>
+          </a>
+          <a class="product-card wide reveal" href="#shopee" data-cursor="VIEW">
+            <div class="product-media"><span class="product-badge">New</span></div>
+            <div class="product-meta">
+              <div><strong>Boardshort 03</strong><small>Weekend / Easy Fit</small></div>
+              <div>View ↗</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="fit" aria-labelledby="fit-title">
+      <header class="section-head reveal">
+        <div class="eyebrow">02 / Shop by Fit</div>
+        <h2 class="display-title" id="fit-title">Find<br />Your Fit.</h2>
+        <p class="section-note">Tiga arah utama untuk mempermudah pembeli memilih karakter celana sebelum masuk ke marketplace.</p>
+      </header>
+      <div class="fit-list">
+        <a class="fit-row reveal" href="#shopee" data-cursor="OPEN">
+          <span class="eyebrow">01</span><h3>Straight</h3><p>Proporsi clean dan mudah dipadukan untuk aktivitas harian.</p><span class="arrow">↗</span>
+        </a>
+        <a class="fit-row reveal" href="#shopee" data-cursor="OPEN">
+          <span class="eyebrow">02</span><h3>Relaxed</h3><p>Lebih lega, lebih santai, tetap punya bentuk yang rapi.</p><span class="arrow">↗</span>
+        </a>
+        <a class="fit-row reveal" href="#shopee" data-cursor="OPEN">
+          <span class="eyebrow">03</span><h3>Utility</h3><p>Detail fungsional untuk gaya casual dan penggunaan aktif.</p><span class="arrow">↗</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section best-seller" id="best" aria-labelledby="best-title">
+      <header class="section-head reveal">
+        <div class="eyebrow">03 / Selected</div>
+        <h2 class="display-title" id="best-title">Most<br />Wanted.</h2>
+        <div class="drag-note">← Drag / Swipe →</div>
+      </header>
+      <div class="slider" aria-label="Koleksi pilihan">
+        <a class="slide product-card" href="#shopee" data-cursor="DRAG"><div class="product-media"></div><div class="product-meta"><div><strong>Drop 01</strong><small>Essential Chino</small></div><div>01</div></div></a>
+        <a class="slide product-card" href="#shopee" data-cursor="DRAG"><div class="product-media"></div><div class="product-meta"><div><strong>Drop 02</strong><small>Utility Cargo</small></div><div>02</div></div></a>
+        <a class="slide product-card" href="#shopee" data-cursor="DRAG"><div class="product-media"></div><div class="product-meta"><div><strong>Drop 03</strong><small>Daily Straight</small></div><div>03</div></div></a>
+        <a class="slide product-card" href="#shopee" data-cursor="DRAG"><div class="product-media"></div><div class="product-meta"><div><strong>Drop 04</strong><small>Weekend Short</small></div><div>04</div></div></a>
+      </div>
+    </section>
+
+    <section class="spotlight" aria-labelledby="spotlight-title">
+      <div class="spotlight-visual" data-cursor="DETAIL"></div>
+      <div class="spotlight-copy">
+        <div class="eyebrow reveal">04 / Product Spotlight</div>
+        <h2 class="reveal" id="spotlight-title">Built for<br />Everyday.</h2>
+        <p class="reveal">Satu produk bisa dijadikan hero untuk menjelaskan bahan, cutting, detail, dan alasan kenapa produk tersebut layak dipilih.</p>
+
+        <div class="feature-points">
+          <article class="feature-point reveal"><span>01 / FABRIC</span><h3>Comfort first.</h3><p>Area ini nanti diisi informasi material asli dari katalog AR STORE.</p></article>
+          <article class="feature-point reveal"><span>02 / FIT</span><h3>Easy proportion.</h3><p>Visual dan copy berubah mengikuti cerita produk tanpa membuat scroll terasa berat.</p></article>
+          <article class="feature-point reveal"><span>03 / DETAIL</span><h3>Made to move.</h3><p>Detail produk ditampilkan sebagai alasan beli, bukan sekadar dekorasi.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="statement" id="about" aria-label="Brand statement">
+      <p class="reveal">Essentials,<br /><span class="thin">refined</span> for<br />everyday life.</p>
+    </section>
+
+    <section class="section" aria-labelledby="why-title">
+      <header class="section-head reveal">
+        <div class="eyebrow">05 / Why AR STORE</div>
+        <h2 class="display-title" id="why-title">Simple.<br />Useful.</h2>
+        <p class="section-note">Keunggulan disampaikan seperti fashion brand, bukan icon-card ala dashboard.</p>
+      </header>
+      <div class="why-grid">
+        <article class="why-item reveal"><span>01</span><h3>Everyday comfort</h3></article>
+        <article class="why-item reveal"><span>02</span><h3>Easy to style</h3></article>
+        <article class="why-item reveal"><span>03</span><h3>Selected fit</h3></article>
+        <article class="why-item reveal"><span>04</span><h3>Shop via Shopee</h3></article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="lookbook-title">
+      <header class="section-head reveal">
+        <div class="eyebrow">06 / Campaign</div>
+        <h2 class="display-title" id="lookbook-title">AR<br />Lookbook.</h2>
+        <p class="section-note">Empat slot ini disiapkan untuk campaign image / foto produk asli tanpa mengubah struktur layout.</p>
+      </header>
+      <div class="lookbook">
+        <div class="lookbook-card reveal" data-label="LOOK 01" data-cursor="LOOK"></div>
+        <div class="lookbook-card reveal" data-label="LOOK 02" data-cursor="LOOK"></div>
+        <div class="lookbook-card reveal" data-label="DETAIL 03" data-cursor="LOOK"></div>
+        <div class="lookbook-card reveal" data-label="LOOK 04" data-cursor="LOOK"></div>
+      </div>
+    </section>
+
+    <section class="section proof" aria-label="Customer proof">
+      <div class="rating reveal">4.9<small>Visual placeholder / customer rating</small></div>
+      <blockquote class="quote reveal">“Good pants should feel easy. The website should too.”<small>AR STORE / LANDING PAGE V1 — rating asli akan dihubungkan setelah data toko tersedia.</small></blockquote>
+    </section>
+
+    <section class="section shopee-bridge" id="shopee" aria-labelledby="shopee-title">
+      <div class="eyebrow">07 / Ready to wear?</div>
+      <h2 class="reveal" id="shopee-title">Shop AR<br />Store.</h2>
+      <div class="bridge-bottom">
+        <p>Checkout tetap dilakukan melalui Shopee. Landing page berfungsi sebagai brand experience dan jalur menuju produk.</p>
+        <a class="cta-arrow" href="https://shopee.co.id/celana_arstore" target="_blank" rel="noopener noreferrer" data-magnetic><span>Open Shopee Store</span><span>↗</span></a>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="faq-title">
+      <header class="section-head reveal">
+        <div class="eyebrow">08 / FAQ</div>
+        <h2 class="display-title" id="faq-title">Good to<br />Know.</h2>
+        <p class="section-note">Isi final FAQ nanti kita sesuaikan dengan aturan toko dan katalog asli.</p>
+      </header>
+      <div class="faq">
+        <article class="faq-item">
+          <button class="faq-button" type="button" aria-expanded="false"><span class="eyebrow">01</span><strong>Bagaimana memilih ukuran?</strong><i>+</i></button>
+          <div class="faq-answer"><div><p>Size guide lengkap akan kita tampilkan setelah data ukuran produk toko dimasukkan.</p></div></div>
+        </article>
+        <article class="faq-item">
+          <button class="faq-button" type="button" aria-expanded="false"><span class="eyebrow">02</span><strong>Di mana melakukan pembelian?</strong><i>+</i></button>
+          <div class="faq-answer"><div><p>Pembelian diarahkan ke toko AR STORE di Shopee agar checkout, pembayaran, dan pengiriman tetap melalui marketplace.</p></div></div>
+        </article>
+        <article class="faq-item">
+          <button class="faq-button" type="button" aria-expanded="false"><span class="eyebrow">03</span><strong>Apakah landing ini sudah final?</strong><i>+</i></button>
+          <div class="faq-answer"><div><p>Belum. Ini baseline UI V1 untuk mengunci art direction sebelum foto produk, data asli, dan integrasi Shopee Open Platform dimasukkan.</p></div></div>
+        </article>
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <h3>Essential trousers<br />for everyday<br />movement.</h3>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="#collection">Collection</a><a href="#fit">Shop by Fit</a>
+        <a href="#best">Selected</a><a href="#about">About</a>
+        <a href="#shopee">Shopee</a><a href="#top">Back to top ↑</a>
+      </nav>
+    </div>
+    <div class="footer-giant" aria-hidden="true">AR STORE</div>
+    <div class="footer-bottom"><span>© <span data-year>2026</span> AR STORE</span><span>Landing V1 / Cloudflare</span></div>
+  </footer>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
