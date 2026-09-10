@@ -1,5 +1,5 @@
-/* AR STORE V1.7 — hero composition fix
-   Artwork is intentionally anchored lower on desktop so the top typography keeps more breathing room. */
+/* AR STORE V1.8 — hero/video/footer refinement
+   Desktop hero composition stays locked; videos are atmospheric layers, not full-strength footage. */
 
 .hero {
   min-height: max(100svh, 760px);
@@ -312,20 +312,131 @@
   }
 }
 
-/* SHOP AR STORE / Video 02 color direction.
-   Replace the loud Shopee orange with a muted warm clay base.
-   When video 02 is wired in, this becomes the calm layer-2 tint above the video. */
+/* VIDEO 01 — Hero. The footage stays soft and atmospheric. */
+.hero-video-wrap,
+.shopee-video-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-video-wrap {
+  z-index: 0;
+  background: #d7d0c4;
+}
+
+.hero-video-wrap video,
+.shopee-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.025);
+}
+
+.hero-video-wrap video {
+  opacity: .38;
+  filter: brightness(.84) contrast(.92) saturate(.72);
+}
+
+.hero-video-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 52% 44%, rgba(241,239,232,.10) 0 24%, rgba(241,239,232,.34) 62%, rgba(241,239,232,.58) 100%),
+    linear-gradient(180deg, rgba(241,239,232,.16) 0%, rgba(241,239,232,.26) 50%, rgba(241,239,232,.54) 100%);
+}
+
+/* VIDEO 02 — calm warm-taupe treatment instead of loud Shopee orange. */
 .shopee-bridge {
-  background: #75645c;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #6c605a;
   color: #f7f3ec;
+}
+
+.shopee-bridge > :not(.shopee-video-wrap) {
+  position: relative;
+  z-index: 3;
+}
+
+.shopee-video-wrap {
+  z-index: 0;
+  background: #6c605a;
+}
+
+.shopee-video-wrap video {
+  opacity: .54;
+  filter: brightness(.66) contrast(.96) saturate(.76);
+}
+
+.shopee-video-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(108,96,90,.08) 0 26%, rgba(52,45,42,.36) 72%, rgba(37,32,30,.64) 100%),
+    linear-gradient(180deg, rgba(58,49,46,.22) 0%, rgba(58,49,46,.34) 56%, rgba(34,29,27,.66) 100%),
+    rgba(108,96,90,.18);
 }
 
 .shopee-bridge .eyebrow,
 .shopee-bridge .bridge-bottom p {
-  color: rgba(247, 243, 236, .72);
+  color: rgba(247,243,236,.74);
 }
 
 .shopee-bridge .cta-arrow {
   color: #f7f3ec;
-  border-color: rgba(247, 243, 236, .72);
+  border-color: rgba(247,243,236,.64);
+}
+
+/* Footer type scale — still editorial, no longer billboard-sized. */
+.footer-top h3 {
+  max-width: 720px;
+  font-size: clamp(34px, 4.4vw, 68px);
+  line-height: .91;
+  letter-spacing: -.03em;
+}
+
+.footer-giant {
+  margin-top: clamp(58px, 7vw, 86px);
+  margin-bottom: 24px;
+  font-size: clamp(88px, 14vw, 220px);
+  line-height: .76;
+  letter-spacing: -.055em;
+}
+
+@media (max-width: 900px) {
+  .footer-top h3 {
+    font-size: clamp(38px, 8vw, 62px);
+  }
+
+  .footer-giant {
+    font-size: clamp(82px, 20vw, 150px);
+    margin-top: 64px;
+  }
+
+  .hero-video-wrap video { opacity: .33; }
+  .shopee-video-wrap video { opacity: .48; }
+}
+
+@media (max-width: 560px) {
+  .footer-top h3 {
+    font-size: clamp(34px, 11vw, 50px);
+  }
+
+  .footer-giant {
+    font-size: clamp(72px, 24vw, 118px);
+    margin-top: 54px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-video-wrap video,
+  .shopee-video-wrap video {
+    animation: none !important;
+  }
 }
