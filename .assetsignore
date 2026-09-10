@@ -1,0 +1,9 @@
+# Server/deploy source must never be served as static assets.
+src/
+wrangler.jsonc
+.assetsignore
+SHOPEE_SETUP.md
+.git/
+.github/
+.gitignore
+node_modules/
