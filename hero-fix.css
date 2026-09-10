@@ -1,5 +1,5 @@
-/* AR STORE V1.4 — hero composition fix
-   Editorial layering stays, with a smaller/lower artwork and safer CTA placement. */
+/* AR STORE V1.5 — hero composition fix
+   Editorial layering stays, with the artwork deliberately lower to create a calmer top field. */
 
 .hero {
   min-height: max(100svh, 760px);
@@ -19,7 +19,7 @@
 
 .hero-art {
   left: 68%;
-  top: 45.5%;
+  top: 56%;
   width: min(22vw, 300px);
   max-height: 54svh;
   z-index: 2;
@@ -79,7 +79,7 @@
 
   .hero-art {
     left: 68%;
-    top: 46%;
+    top: 56%;
     width: min(23vw, 280px);
   }
 
@@ -121,7 +121,7 @@
 
   .hero-art {
     left: 69%;
-    top: 48.5%;
+    top: 57%;
     width: min(19vw, 245px);
     max-height: 50svh;
   }
@@ -180,7 +180,7 @@
 
   .hero-art {
     left: 70%;
-    top: 50%;
+    top: 58%;
     width: min(16.5vw, 195px);
     max-height: 48svh;
   }
@@ -225,7 +225,7 @@
 
   .hero-art {
     left: 58%;
-    top: 41%;
+    top: 47%;
     width: min(38vw, 300px);
     max-height: none;
   }
@@ -274,7 +274,7 @@
 
   .hero-art {
     left: 50%;
-    top: 40%;
+    top: 46%;
     width: min(66vw, 275px);
   }
 
