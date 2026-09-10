@@ -1,0 +1,39 @@
+/* AR STORE Seller Dashboard — Settings Live V1 */
+.settings-live-intro{margin-bottom:24px}
+.settings-status-strip{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--line);border-radius:14px;background:rgba(246,243,236,.66)}
+.settings-status-strip>div{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap}
+.settings-status-strip strong{font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+.settings-status-strip small{font-size:9px;color:var(--muted)}
+.settings-grid{align-items:stretch}
+.settings-card{display:flex;flex-direction:column;gap:6px}
+.settings-card .panel-head{margin-bottom:14px}
+.settings-local-chip{display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;border:1px solid var(--line);border-radius:999px;font-size:7px;letter-spacing:.1em;color:var(--muted)}
+.settings-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.settings-form-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.settings-form-grid label{display:grid;gap:7px;min-width:0}
+.settings-form-grid label>span{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.settings-form-grid input{width:100%;min-width:0;border:1px solid var(--line);background:rgba(255,255,255,.34);border-radius:10px;padding:11px 12px;outline:none;color:var(--ink)}
+.settings-form-grid input:focus{border-color:var(--ink)}
+.settings-form-grid input:disabled{opacity:.62}
+.settings-suffix-input{display:grid;grid-template-columns:minmax(0,1fr) 34px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.34);overflow:hidden}
+.settings-suffix-input input{border:0;border-radius:0;background:transparent}
+.settings-suffix-input b{display:grid;place-items:center;border-left:1px solid var(--line);font-size:10px;font-weight:500;color:var(--muted)}
+.settings-actions{display:flex;align-items:center;gap:12px;margin-top:14px;min-height:38px}
+#settingsSaveState{font-size:9px;color:var(--muted)}
+#settingsSaveState.success{color:var(--good)}
+#settingsSaveState.error{color:var(--loss)}
+.settings-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
+.settings-meta-grid.compact{grid-template-columns:repeat(2,minmax(0,1fr))}
+.settings-meta-grid>div{padding:14px 10px 8px 0;display:grid;gap:5px;min-width:0}
+.settings-meta-grid small{font-size:7px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.settings-meta-grid strong{font-size:10px;overflow-wrap:anywhere}
+.settings-danger-zone{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:auto;padding-top:18px;border-top:1px solid var(--line)}
+.settings-danger-zone>div{display:grid;gap:3px}
+.settings-danger-zone strong{font-size:10px}.settings-danger-zone small{font-size:8px;color:var(--muted);line-height:1.45;max-width:420px}
+.settings-production-note{display:grid;grid-template-columns:minmax(220px,.55fr) minmax(0,1.45fr);gap:28px;margin-top:12px}
+.settings-production-note h2{margin-top:5px}
+.settings-boundary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.settings-boundary-grid>div{background:var(--bg);padding:14px;display:grid;gap:4px}
+.settings-boundary-grid strong{font-size:9px}.settings-boundary-grid span{font-size:8px;color:var(--muted);line-height:1.45}
+@media(max-width:1100px){.settings-form-grid.three{grid-template-columns:1fr}.settings-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.settings-production-note{grid-template-columns:1fr}}
+@media(max-width:640px){.settings-status-strip{align-items:flex-start}.settings-status-strip>div{display:grid;grid-template-columns:auto 1fr}.settings-status-strip small{grid-column:2}.settings-form-grid,.settings-form-grid.three,.settings-meta-grid,.settings-meta-grid.compact,.settings-boundary-grid{grid-template-columns:1fr}.settings-danger-zone{align-items:flex-start;flex-direction:column}.settings-danger-zone .ghost-button{width:100%}.settings-actions{align-items:flex-start;flex-direction:column}.settings-actions .solid-button{width:100%}.settings-production-note{gap:16px}}
