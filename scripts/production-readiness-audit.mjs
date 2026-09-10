@@ -10,6 +10,8 @@ const base = read('src/worker-v3.js');
 const tokenHealth = read('src/worker-v3-12.js');
 const worker = read('src/worker-v3-20.js');
 const network = read('dashboard/network-guard-v1.js');
+const homeMotionJs = read('homepage-motion-v1.js');
+const homeMotionCss = read('homepage-motion-v1.css');
 
 check('Wrangler points to worker-v3-20', wrangler.includes('"main": "./src/worker-v3-20.js"'));
 check('Production worker consolidates from v3-12', worker.includes("import baseWorker from './worker-v3-12.js'"));
@@ -64,6 +66,27 @@ const injectedAssets = [
   'settings-live-v1.js'
 ];
 for (const asset of injectedAssets) check(`Production injection contains ${asset}`, worker.includes(asset));
+
+// Homepage Global Premium Motion V1: syntax, wiring, section signatures, mobile
+// restraint, and accessibility are all checked without needing browser secrets.
+let motionParses = true;
+try { new Function(homeMotionJs); } catch (_) { motionParses = false; }
+check('Homepage motion JavaScript parses', motionParses);
+check('Homepage motion CSS injected at root', worker.includes('homepage-motion-v1.css') && worker.includes('isHomepagePath'));
+check('Homepage motion JS injected at root', worker.includes('homepage-motion-v1.js') && worker.includes('global-premium-motion-v1'));
+check('Homepage motion uses IntersectionObserver', homeMotionJs.includes('IntersectionObserver'));
+check('Homepage motion uses requestAnimationFrame', homeMotionJs.includes('requestAnimationFrame'));
+check('Homepage motion respects reduced motion', homeMotionJs.includes('prefers-reduced-motion') && homeMotionCss.includes('@media(prefers-reduced-motion:reduce)'));
+check('Homepage motion has mobile restraint', homeMotionCss.includes('@media(max-width:640px)'));
+check('Homepage motion has hero entrance', homeMotionCss.includes('motion-page-entered') && homeMotionCss.includes('.hero-display'));
+check('Homepage motion has Essentials signature', homeMotionCss.includes('motion-essentials'));
+check('Homepage motion has Fit signature', homeMotionCss.includes('motion-fit'));
+check('Homepage motion has Most Wanted signature', homeMotionCss.includes('motion-best'));
+check('Homepage motion has Spotlight narrative', homeMotionJs.includes('--spot-progress') && homeMotionCss.includes('motion-spotlight'));
+check('Homepage motion has Lookbook signatures', homeMotionCss.includes('motion-lookbook'));
+check('Homepage motion has Shopee cinematic sequence', homeMotionCss.includes('motion-shopee'));
+check('Homepage motion has FAQ sequence', homeMotionCss.includes('motion-faq'));
+check('Homepage motion has footer finale', homeMotionCss.includes('motion-footer'));
 
 const failed = checks.filter((item) => !item.pass);
 for (const item of checks) console.log(`${item.pass ? 'PASS' : 'FAIL'}  ${item.name}${item.detail ? ` — ${item.detail}` : ''}`);
