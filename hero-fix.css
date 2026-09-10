@@ -1,5 +1,5 @@
-/* AR STORE V1.3 — hero composition fix
-   Editorial layering stays, with stable safe-zones across wide, short, tablet and mobile viewports. */
+/* AR STORE V1.4 — hero composition fix
+   Editorial layering stays, with a smaller/lower artwork and safer CTA placement. */
 
 .hero {
   min-height: max(100svh, 760px);
@@ -18,14 +18,15 @@
 }
 
 .hero-art {
-  left: 66%;
-  top: 38%;
-  width: min(29vw, 390px);
-  max-height: 58svh;
+  left: 68%;
+  top: 45.5%;
+  width: min(22vw, 300px);
+  max-height: 54svh;
   z-index: 2;
 }
 
 .hero-bottom {
+  position: relative;
   z-index: 5;
   grid-template-columns: minmax(92px, .34fr) minmax(0, 560px) minmax(210px, 1fr);
   gap: clamp(22px, 3vw, 46px);
@@ -34,6 +35,7 @@
   min-width: 0;
   max-width: 100%;
   justify-self: stretch;
+  overflow: visible;
 }
 
 .hero-index,
@@ -54,27 +56,31 @@
 }
 
 .hero-bottom > .cta-arrow {
-  justify-self: end;
-  align-self: end;
-  width: min(220px, 100%);
-  max-width: 100%;
-  margin-bottom: 2px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  justify-self: auto;
+  align-self: auto;
+  width: 190px;
+  max-width: min(190px, 24vw);
+  margin: 0;
   white-space: nowrap;
   overflow: hidden;
+  transform: none !important;
 }
 
 @media (max-width: 1180px) {
   .hero { min-height: max(100svh, 720px); }
 
   .hero-display {
-    top: 20%;
-    font-size: clamp(84px, 16.5vw, 210px);
+    top: 19%;
+    font-size: clamp(84px, 16vw, 205px);
   }
 
   .hero-art {
-    left: 65%;
-    top: 36.5%;
-    width: min(30vw, 340px);
+    left: 68%;
+    top: 46%;
+    width: min(23vw, 280px);
   }
 
   .hero-bottom {
@@ -87,37 +93,40 @@
     font-size: clamp(40px, 5.35vw, 66px);
   }
 
-  .hero-bottom > .cta-arrow { width: min(190px, 100%); }
+  .hero-bottom > .cta-arrow {
+    width: 175px;
+    max-width: 20vw;
+  }
 }
 
-/* Short desktop/laptop: fit the entire hero inside the visible viewport. */
-@media (min-width: 901px) and (max-height: 760px) {
+/* Laptop / browser windows around the user's current 1338×805 view. */
+@media (min-width: 901px) and (max-height: 840px) {
   .hero {
     min-height: 100svh;
     height: 100svh;
-    padding: 78px var(--page) 18px;
+    padding: 76px var(--page) 18px;
   }
 
   .hero-kicker,
   .hero-year {
-    top: 76px;
+    top: 74px;
     font-size: 9px;
   }
 
   .hero-display {
-    top: 14%;
-    font-size: clamp(78px, 14vw, 180px);
+    top: 12.5%;
+    font-size: clamp(78px, 13.5vw, 180px);
     line-height: .76;
   }
 
   .hero-art {
     left: 69%;
-    top: 43%;
-    width: min(20vw, 225px);
-    max-height: 56svh;
+    top: 48.5%;
+    width: min(19vw, 245px);
+    max-height: 50svh;
   }
 
-  .hero-art::before { font-size: 56px; }
+  .hero-art::before { font-size: 58px; }
   .hero-art::after { font-size: 7px; }
 
   .hero-bottom {
@@ -144,50 +153,57 @@
   }
 
   .hero-bottom > .cta-arrow {
-    width: min(170px, 100%);
+    right: 0;
+    bottom: 2px;
+    width: 165px;
+    max-width: 19vw;
     padding-top: 10px;
     padding-bottom: 9px;
     font-size: 10px;
   }
 }
 
-/* Extra-short browser windows such as 1220×500-ish screenshots. */
-@media (min-width: 901px) and (max-height: 620px) {
+/* Extra-short desktop: smaller again and shifted farther down. */
+@media (min-width: 901px) and (max-height: 680px) {
   .hero {
-    padding-top: 68px;
+    padding-top: 66px;
     padding-bottom: 14px;
   }
 
   .hero-kicker,
-  .hero-year { top: 66px; }
+  .hero-year { top: 64px; }
 
   .hero-display {
-    top: 12%;
-    font-size: clamp(72px, 13vw, 158px);
+    top: 10.5%;
+    font-size: clamp(70px, 12.5vw, 152px);
   }
 
   .hero-art {
-    top: 42%;
-    width: min(18vw, 205px);
-    max-height: 54svh;
+    left: 70%;
+    top: 50%;
+    width: min(16.5vw, 195px);
+    max-height: 48svh;
   }
 
   .hero-bottom {
-    grid-template-columns: 56px minmax(0, 430px) minmax(145px, 1fr);
+    grid-template-columns: 56px minmax(0, 425px) minmax(145px, 1fr);
     gap: 14px;
   }
 
   .hero-copy h1 {
-    max-width: 430px;
-    font-size: clamp(31px, 3.7vw, 44px);
+    max-width: 425px;
+    font-size: clamp(31px, 3.65vw, 43px);
   }
 
   .hero-copy p {
-    max-width: 350px;
+    max-width: 345px;
     font-size: 10px;
   }
 
-  .hero-bottom > .cta-arrow { width: min(155px, 100%); }
+  .hero-bottom > .cta-arrow {
+    width: 150px;
+    max-width: 18vw;
+  }
 }
 
 /* Tablet: visual sits above copy instead of colliding with it. */
@@ -208,9 +224,9 @@
   }
 
   .hero-art {
-    left: 61%;
-    top: 38%;
-    width: min(42vw, 330px);
+    left: 58%;
+    top: 41%;
+    width: min(38vw, 300px);
     max-height: none;
   }
 
@@ -227,10 +243,13 @@
   }
 
   .hero-bottom > .cta-arrow {
+    position: static;
     grid-column: 2;
     justify-self: start;
     width: min(220px, 100%);
+    max-width: 100%;
     margin-top: 4px;
+    transform: none !important;
   }
 }
 
@@ -255,11 +274,11 @@
 
   .hero-art {
     left: 50%;
-    top: 38%;
-    width: min(72vw, 300px);
+    top: 40%;
+    width: min(66vw, 275px);
   }
 
-  .hero-art::before { font-size: 58px; }
+  .hero-art::before { font-size: 54px; }
 
   .hero-bottom {
     grid-template-columns: 1fr;
@@ -285,8 +304,10 @@
   }
 
   .hero-bottom > .cta-arrow {
+    position: static;
     justify-self: start;
     width: min(240px, 80vw);
+    max-width: 100%;
     margin-top: 8px;
   }
 }
