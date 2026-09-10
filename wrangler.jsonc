@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "shopeecelana",
-  "main": "./src/worker-v3-2.js",
+  "main": "./src/worker-v3-4.js",
   "compatibility_date": "2026-09-10",
   "keep_vars": true,
   "secrets": {
