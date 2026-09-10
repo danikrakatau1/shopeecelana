@@ -211,25 +211,3 @@ document.querySelectorAll('[data-magnetic]').forEach((button) => {
 
 const year = document.querySelector('[data-year]');
 if (year) year.textContent = new Date().getFullYear();
-
-// Homepage Global Premium Motion V1 is loaded additively so the locked landing
-// structure and existing interactions remain untouched. The motion layer uses
-// native scrolling, IntersectionObserver, rAF, and respects reduced-motion.
-if (!window.__ARSTORE_HOMEPAGE_MOTION_LOADER_V1__) {
-  window.__ARSTORE_HOMEPAGE_MOTION_LOADER_V1__ = true;
-
-  const cssHref = './homepage-motion-v1.css';
-  if (!document.querySelector(`link[href="${cssHref}"]`)) {
-    const motionCss = document.createElement('link');
-    motionCss.rel = 'stylesheet';
-    motionCss.href = cssHref;
-    motionCss.dataset.homepageMotionV1 = 'true';
-    document.head.appendChild(motionCss);
-  }
-
-  const motionScript = document.createElement('script');
-  motionScript.src = './homepage-motion-v1.js';
-  motionScript.async = false;
-  motionScript.dataset.homepageMotionV1 = 'true';
-  document.body.appendChild(motionScript);
-}
