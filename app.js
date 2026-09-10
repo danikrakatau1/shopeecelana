@@ -47,6 +47,21 @@ const shopeeVideo = createBackgroundVideo({
   preload: 'metadata'
 });
 
+/* Video 02 / SHOP AR STORE — full-bleed framing.
+   Override the earlier contain treatment so the moving footage becomes the section itself,
+   not a video rectangle pasted on top of the taupe background. */
+if (shopeeVideo) {
+  shopeeVideo.host.style.minHeight = '62svh';
+  shopeeVideo.wrap.style.inset = '0';
+  shopeeVideo.wrap.style.display = 'block';
+  shopeeVideo.video.style.width = '100%';
+  shopeeVideo.video.style.height = '100%';
+  shopeeVideo.video.style.objectFit = 'cover';
+  shopeeVideo.video.style.objectPosition = '50% 42%';
+  shopeeVideo.video.style.transform = 'none';
+  shopeeVideo.video.style.opacity = '.50';
+}
+
 const managedVideos = [heroVideo, shopeeVideo].filter(Boolean);
 if (managedVideos.length && !prefersReducedMotion.matches) {
   const videoObserver = new IntersectionObserver((entries) => {
