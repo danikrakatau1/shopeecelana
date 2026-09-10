@@ -1,0 +1,228 @@
+/* AR STORE — Homepage Global Premium Motion V1
+   Distinct choreography per section. No external animation dependency. */
+
+:root{
+  --motion-micro:220ms;
+  --motion-standard:460ms;
+  --motion-reveal:760ms;
+  --motion-cinematic:1180ms;
+  --motion-ease:cubic-bezier(.16,1,.3,1);
+  --motion-ease-inout:cubic-bezier(.65,0,.35,1);
+  --motion-velocity:0;
+}
+
+/* Keep motion composited and predictable. */
+.motion-v1-ready :where(.site-header,.hero-kicker,.hero-year,.hero-display,.hero-copy,.hero-bottom>.cta-arrow,.section-head,.product-card,.fit-row,.lookbook-card,.why-item,.rating,.quote,.footer-giant,.footer-links a){
+  backface-visibility:hidden;
+}
+
+/* PAGE / HERO — staged cinematic entrance. */
+.motion-v1-ready .site-header{
+  opacity:0;
+  transform:translateY(-14px);
+}
+.motion-v1-ready.motion-page-entered .site-header{
+  opacity:1;
+  transform:none;
+  transition:opacity var(--motion-reveal) var(--motion-ease) 40ms,transform var(--motion-reveal) var(--motion-ease) 40ms,background var(--base) var(--ease),padding var(--base) var(--ease),backdrop-filter var(--base) var(--ease);
+}
+.motion-v1-ready .hero-kicker,.motion-v1-ready .hero-year{
+  opacity:0;
+  transform:translateY(10px);
+}
+.motion-v1-ready .hero-display{
+  opacity:0;
+  clip-path:inset(0 0 100% 0);
+}
+.motion-v1-ready .hero-copy{
+  opacity:0;
+  transform:translateY(28px);
+}
+.motion-v1-ready .hero-bottom>.cta-arrow{
+  opacity:0;
+  transform:translateY(16px)!important;
+}
+.motion-v1-ready .hero-video-wrap{
+  opacity:.72;
+  transform:scale(1.018);
+  transition:opacity var(--motion-cinematic) var(--motion-ease),transform 1800ms var(--motion-ease);
+}
+.motion-v1-ready.motion-page-entered .hero-video-wrap{opacity:1;transform:none}
+.motion-v1-ready.motion-page-entered .hero-kicker{
+  opacity:1;transform:none;transition:opacity 620ms var(--motion-ease) 140ms,transform 620ms var(--motion-ease) 140ms;
+}
+.motion-v1-ready.motion-page-entered .hero-year{
+  opacity:1;transform:none;transition:opacity 620ms var(--motion-ease) 220ms,transform 620ms var(--motion-ease) 220ms;
+}
+.motion-v1-ready.motion-page-entered .hero-display{
+  opacity:1;clip-path:inset(0);transition:opacity 900ms var(--motion-ease) 260ms,clip-path var(--motion-cinematic) var(--motion-ease) 260ms;
+}
+.motion-v1-ready.motion-page-entered .hero-copy{
+  opacity:1;transform:none;transition:opacity var(--motion-reveal) var(--motion-ease) 520ms,transform var(--motion-cinematic) var(--motion-ease) 520ms;
+}
+.motion-v1-ready.motion-page-entered .hero-bottom>.cta-arrow{
+  opacity:1;transform:none!important;transition:opacity 680ms var(--motion-ease) 720ms,transform 680ms var(--motion-ease) 720ms,gap var(--base) var(--ease);
+}
+
+/* MARQUEE — crop first, then movement. Velocity gives a tiny responsive lean. */
+.motion-v1-ready .marquee{
+  clip-path:inset(0 100% 0 0);
+  transform:skewX(calc(var(--motion-velocity) * .035deg));
+  transition:clip-path 920ms var(--motion-ease),transform 180ms linear;
+}
+.motion-v1-ready .marquee.is-motion-in{clip-path:inset(0)}
+.motion-v1-ready .marquee:not(.is-motion-in) .marquee-track{animation-play-state:paused}
+
+/* Shared section header: each section owns a different entry direction. */
+.motion-v1-ready .motion-section .section-head{opacity:0}
+.motion-v1-ready .motion-section.is-motion-in .section-head{opacity:1}
+
+/* 01 / ESSENTIALS — title lifts, cards arrive from three different vectors. */
+.motion-v1-ready .motion-essentials .section-head{
+  transform:translateY(42px);clip-path:inset(0 0 42% 0);
+  transition:opacity var(--motion-reveal) var(--motion-ease),transform 980ms var(--motion-ease),clip-path 980ms var(--motion-ease);
+}
+.motion-v1-ready .motion-essentials.is-motion-in .section-head{transform:none;clip-path:inset(0)}
+.motion-v1-ready .motion-essentials .product-card{opacity:0;transition:opacity 720ms var(--motion-ease),transform 980ms var(--motion-ease),clip-path 980ms var(--motion-ease)}
+.motion-v1-ready .motion-essentials .product-card:nth-of-type(1){transform:translate3d(-34px,26px,0)}
+.motion-v1-ready .motion-essentials .product-stack .product-card:first-child{transform:translate3d(30px,-24px,0);transition-delay:90ms}
+.motion-v1-ready .motion-essentials .product-stack .product-card:last-child{transform:translate3d(24px,30px,0);clip-path:polygon(16% 0,100% 0,100% 100%,0 100%);transition-delay:170ms}
+.motion-v1-ready .motion-essentials.is-motion-in .product-card{opacity:1;transform:none;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+
+/* 02 / FIT — row-by-row editorial sequence. */
+.motion-v1-ready .motion-fit .section-head{transform:translateX(-34px);transition:opacity 700ms var(--motion-ease),transform 900ms var(--motion-ease)}
+.motion-v1-ready .motion-fit.is-motion-in .section-head{transform:none}
+.motion-v1-ready .motion-fit .fit-row{
+  opacity:0;transform:translateX(calc((var(--i,0) + 1) * 16px));
+  clip-path:inset(0 0 0 26%);
+  transition:opacity 650ms var(--motion-ease),transform 880ms var(--motion-ease),clip-path 880ms var(--motion-ease),padding var(--base) var(--ease),background var(--base) var(--ease);
+  transition-delay:calc(var(--i,0) * 90ms);
+}
+.motion-v1-ready .motion-fit.is-motion-in .fit-row{opacity:1;transform:none;clip-path:inset(0)}
+.motion-v1-ready .motion-fit .fit-row>*{transition:transform 620ms var(--motion-ease),opacity 620ms var(--motion-ease)}
+.motion-v1-ready .motion-fit.is-motion-in .fit-row>*{transition-delay:calc(var(--i,0) * 90ms + var(--child-i,0) * 48ms)}
+
+/* 03 / MOST WANTED — dark-stage cascade from the right. */
+.motion-v1-ready .motion-best .section-head{transform:translateY(-28px);clip-path:inset(0 0 35% 0);transition:opacity 720ms var(--motion-ease),transform 940ms var(--motion-ease),clip-path 940ms var(--motion-ease)}
+.motion-v1-ready .motion-best.is-motion-in .section-head{transform:none;clip-path:inset(0)}
+.motion-v1-ready .motion-best .slide{
+  opacity:0;transform:translate3d(58px,18px,0) rotate(.8deg);
+  transition:opacity 700ms var(--motion-ease),transform 1000ms var(--motion-ease);
+  transition-delay:calc(var(--i,0) * 85ms + 100ms);
+}
+.motion-v1-ready .motion-best.is-motion-in .slide{opacity:1;transform:none}
+
+/* 04 / SPOTLIGHT — scroll narrative. */
+.motion-v1-ready .motion-spotlight .spotlight-visual{
+  --spot-scale:calc(1 + var(--spot-progress,0) * .035);
+}
+.motion-v1-ready .motion-spotlight .spotlight-visual::before{
+  transform:scale(var(--spot-scale));
+  transform-origin:center;
+  transition:transform 90ms linear,filter 420ms var(--motion-ease);
+}
+.motion-v1-ready .motion-spotlight .spotlight-copy>.eyebrow,
+.motion-v1-ready .motion-spotlight .spotlight-copy>h2,
+.motion-v1-ready .motion-spotlight .spotlight-copy>p{
+  opacity:0;transform:translateY(34px);clip-path:inset(0 0 40% 0);
+  transition:opacity 700ms var(--motion-ease),transform 980ms var(--motion-ease),clip-path 980ms var(--motion-ease);
+}
+.motion-v1-ready .motion-spotlight.is-motion-in .spotlight-copy>.eyebrow{opacity:1;transform:none;clip-path:inset(0);transition-delay:60ms}
+.motion-v1-ready .motion-spotlight.is-motion-in .spotlight-copy>h2{opacity:1;transform:none;clip-path:inset(0);transition-delay:150ms}
+.motion-v1-ready .motion-spotlight.is-motion-in .spotlight-copy>p{opacity:1;transform:none;clip-path:inset(0);transition-delay:250ms}
+.motion-v1-ready .motion-spotlight .feature-point{opacity:.34;transform:translateX(18px);transition:opacity 520ms var(--motion-ease),transform 650ms var(--motion-ease)}
+.motion-v1-ready .motion-spotlight .feature-point.is-active{opacity:1;transform:none}
+
+/* 05 / STATEMENT — centered aperture + tracking compression. */
+.motion-v1-ready .motion-statement p{
+  opacity:0;transform:scale(.94);clip-path:inset(48% 0 48% 0);letter-spacing:.015em;
+  transition:opacity 700ms var(--motion-ease),transform 1150ms var(--motion-ease),clip-path 1150ms var(--motion-ease),letter-spacing 1150ms var(--motion-ease);
+}
+.motion-v1-ready .motion-statement.is-motion-in p{opacity:1;transform:none;clip-path:inset(0);letter-spacing:-.055em}
+
+/* 06 / WHY — alternating tiles, 01 → 04. */
+.motion-v1-ready .motion-why .section-head{transform:scale(.97);transform-origin:left bottom;transition:opacity 700ms var(--motion-ease),transform 920ms var(--motion-ease)}
+.motion-v1-ready .motion-why.is-motion-in .section-head{transform:none}
+.motion-v1-ready .motion-why .why-item{
+  opacity:0;transform:translateY(calc((var(--i,0) % 2) * 22px + 26px));
+  transition:opacity 620ms var(--motion-ease),transform 880ms var(--motion-ease);
+  transition-delay:calc(var(--i,0) * 90ms + 100ms);
+}
+.motion-v1-ready .motion-why.is-motion-in .why-item{opacity:1;transform:none}
+
+/* 07 / LOOKBOOK — four deliberately different wipes. */
+.motion-v1-ready .motion-lookbook .section-head{transform:translateY(34px);transition:opacity 680ms var(--motion-ease),transform 900ms var(--motion-ease)}
+.motion-v1-ready .motion-lookbook.is-motion-in .section-head{transform:none}
+.motion-v1-ready .motion-lookbook .lookbook-card{opacity:0;transition:opacity 680ms var(--motion-ease),clip-path 1100ms var(--motion-ease),transform 1100ms var(--motion-ease)}
+.motion-v1-ready .motion-lookbook .lookbook-card:nth-child(1){clip-path:inset(100% 0 0 0)}
+.motion-v1-ready .motion-lookbook .lookbook-card:nth-child(2){clip-path:inset(0 100% 0 0);transition-delay:90ms}
+.motion-v1-ready .motion-lookbook .lookbook-card:nth-child(3){transform:scale(.88);clip-path:inset(9%);transition-delay:170ms}
+.motion-v1-ready .motion-lookbook .lookbook-card:nth-child(4){clip-path:polygon(100% 0,100% 0,100% 100%,54% 100%);transition-delay:240ms}
+.motion-v1-ready .motion-lookbook.is-motion-in .lookbook-card{opacity:1;transform:none;clip-path:inset(0)}
+.motion-v1-ready .motion-lookbook.is-motion-in .lookbook-card:nth-child(4){clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+
+/* 08 / PROOF — rating lands first, quote follows. */
+.motion-v1-ready .motion-proof .rating{opacity:0;transform:translateY(24px) rotate(-2deg) scale(.92);transition:opacity 650ms var(--motion-ease),transform 950ms var(--motion-ease)}
+.motion-v1-ready .motion-proof .quote{opacity:0;transform:translateY(38px);clip-path:inset(0 0 55% 0);transition:opacity 700ms var(--motion-ease) 160ms,transform 1000ms var(--motion-ease) 160ms,clip-path 1000ms var(--motion-ease) 160ms}
+.motion-v1-ready .motion-proof.is-motion-in .rating,.motion-v1-ready .motion-proof.is-motion-in .quote{opacity:1;transform:none;clip-path:inset(0)}
+
+/* 09 / SHOPEE BRIDGE — footage settles, copy sequences, CTA last. */
+.motion-v1-ready .motion-shopee .shopee-video-wrap{opacity:.72;transform:scale(1.018);transition:opacity 1250ms var(--motion-ease),transform 1600ms var(--motion-ease)}
+.motion-v1-ready .motion-shopee>.eyebrow,.motion-v1-ready .motion-shopee>h2,.motion-v1-ready .motion-shopee .bridge-bottom>p,.motion-v1-ready .motion-shopee .bridge-bottom>.cta-arrow{opacity:0;transform:translateY(28px);transition:opacity 700ms var(--motion-ease),transform 950ms var(--motion-ease)}
+.motion-v1-ready .motion-shopee.is-motion-in .shopee-video-wrap{opacity:1;transform:none}
+.motion-v1-ready .motion-shopee.is-motion-in>.eyebrow{opacity:1;transform:none;transition-delay:80ms}
+.motion-v1-ready .motion-shopee.is-motion-in>h2{opacity:1;transform:none;transition-delay:180ms}
+.motion-v1-ready .motion-shopee.is-motion-in .bridge-bottom>p{opacity:1;transform:none;transition-delay:310ms}
+.motion-v1-ready .motion-shopee.is-motion-in .bridge-bottom>.cta-arrow{opacity:1;transform:none!important;transition-delay:430ms}
+
+/* 10 / FAQ — line-draw cascade and smoother answer reveal. */
+.motion-v1-ready .motion-faq .section-head{transform:translateX(26px);transition:opacity 700ms var(--motion-ease),transform 900ms var(--motion-ease)}
+.motion-v1-ready .motion-faq.is-motion-in .section-head{transform:none}
+.motion-v1-ready .motion-faq .faq-item{position:relative;opacity:0;transform:translateY(16px);border-top-color:transparent;transition:opacity 560ms var(--motion-ease),transform 760ms var(--motion-ease);transition-delay:calc(var(--i,0) * 80ms + 100ms)}
+.motion-v1-ready .motion-faq .faq-item::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--line);transform:scaleX(0);transform-origin:left;transition:transform 820ms var(--motion-ease);transition-delay:calc(var(--i,0) * 80ms + 140ms)}
+.motion-v1-ready .motion-faq.is-motion-in .faq-item{opacity:1;transform:none}
+.motion-v1-ready .motion-faq.is-motion-in .faq-item::before{transform:scaleX(1)}
+.motion-v1-ready .motion-faq .faq-answer{transition:grid-template-rows 520ms var(--motion-ease)}
+.motion-v1-ready .motion-faq .faq-answer p{opacity:0;transform:translateY(-8px);transition:opacity 380ms var(--motion-ease),transform 480ms var(--motion-ease)}
+.motion-v1-ready .motion-faq .faq-item.open .faq-answer p{opacity:1;transform:none;transition-delay:100ms}
+
+/* 11 / FOOTER — links step in; giant wordmark closes the page. */
+.motion-v1-ready .motion-footer .footer-top h3{opacity:0;transform:translateY(30px);clip-path:inset(0 0 45% 0);transition:opacity 700ms var(--motion-ease),transform 1000ms var(--motion-ease),clip-path 1000ms var(--motion-ease)}
+.motion-v1-ready .motion-footer .footer-links a{opacity:0;transform:translateX(16px);transition:opacity 520ms var(--motion-ease),transform 720ms var(--motion-ease);transition-delay:calc(var(--i,0) * 65ms + 150ms)}
+.motion-v1-ready .motion-footer .footer-giant{opacity:0;transform:translateY(36px);clip-path:inset(100% 0 0 0);letter-spacing:-.015em;transition:opacity 700ms var(--motion-ease) 300ms,transform 1100ms var(--motion-ease) 300ms,clip-path 1200ms var(--motion-ease) 300ms,letter-spacing 1200ms var(--motion-ease) 300ms}
+.motion-v1-ready .motion-footer.is-motion-in .footer-top h3,.motion-v1-ready .motion-footer.is-motion-in .footer-links a,.motion-v1-ready .motion-footer.is-motion-in .footer-giant{opacity:1;transform:none;clip-path:inset(0)}
+.motion-v1-ready .motion-footer.is-motion-in .footer-giant{letter-spacing:-.055em}
+
+/* MICRO INTERACTION — restrained, editorial, and pointer-aware. */
+@media (pointer:fine){
+  .motion-v1-ready .product-card .product-media{transition:transform 900ms var(--motion-ease),filter 700ms var(--motion-ease)}
+  .motion-v1-ready .product-card:hover .product-media{transform:scale(1.018)}
+  .motion-v1-ready .product-card .product-meta{transition:transform 520ms var(--motion-ease)}
+  .motion-v1-ready .product-card:hover .product-meta{transform:translateY(-3px)}
+  .motion-v1-ready :where(.pill,.cta-arrow):active{transform:scale(.985)!important;transition-duration:120ms!important}
+  .motion-v1-ready .brand{transition:letter-spacing 420ms var(--motion-ease),opacity 320ms var(--motion-ease)}
+  .motion-v1-ready .brand:hover{letter-spacing:.015em}
+}
+
+/* MOBILE — keep the choreography, remove expensive travel. */
+@media(max-width:640px){
+  :root{--motion-reveal:620ms;--motion-cinematic:880ms}
+  .motion-v1-ready .motion-essentials .product-card:nth-of-type(1),
+  .motion-v1-ready .motion-essentials .product-stack .product-card:first-child,
+  .motion-v1-ready .motion-essentials .product-stack .product-card:last-child{transform:translateY(22px)}
+  .motion-v1-ready .motion-fit .fit-row{transform:translateX(14px)}
+  .motion-v1-ready .motion-best .slide{transform:translate3d(30px,10px,0)}
+  .motion-v1-ready .motion-spotlight .spotlight-visual::before{transform:none}
+  .motion-v1-ready .motion-spotlight .feature-point{opacity:.6;transform:translateY(12px)}
+  .motion-v1-ready .motion-lookbook .lookbook-card:nth-child(3){transform:scale(.94)}
+  .motion-v1-ready .motion-shopee>.eyebrow,.motion-v1-ready .motion-shopee>h2,.motion-v1-ready .motion-shopee .bridge-bottom>p,.motion-v1-ready .motion-shopee .bridge-bottom>.cta-arrow{transform:translateY(18px)}
+  .motion-v1-ready :where(.pill,.cta-arrow,.faq-button):active{transform:scale(.985)}
+}
+
+/* Accessibility: motion is optional, content is never withheld. */
+@media(prefers-reduced-motion:reduce){
+  .motion-v1-ready :where(.site-header,.hero-kicker,.hero-year,.hero-display,.hero-copy,.hero-bottom>.cta-arrow,.marquee,.motion-section .section-head,.motion-section .product-card,.motion-section .fit-row,.motion-section .slide,.motion-section .lookbook-card,.motion-section .why-item,.motion-section .rating,.motion-section .quote,.motion-section .feature-point,.motion-section p,.motion-section h2,.motion-footer .footer-top h3,.motion-footer .footer-links a,.motion-footer .footer-giant){
+    opacity:1!important;transform:none!important;clip-path:none!important;letter-spacing:inherit!important;transition:none!important;animation:none!important;
+  }
+  .motion-v1-ready .marquee-track{animation:none!important}
+}
