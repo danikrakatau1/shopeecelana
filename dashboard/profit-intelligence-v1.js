@@ -113,6 +113,15 @@
 
   navButton?.addEventListener('click', activateProfit);
 
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    if (item === navButton) return;
+    item.addEventListener('click', () => {
+      panel.classList.remove('active');
+      navButton?.classList.remove('active');
+      if (location.hash === '#profit') history.replaceState(null, '', `${location.pathname}${location.search}`);
+    });
+  });
+
   const fetchJson = async (url) => {
     const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
     let data = null;
