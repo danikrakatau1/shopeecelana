@@ -32,6 +32,8 @@ const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.string
 const isDashboardPath = (pathname) =>
   pathname === '/dashboard' || pathname === '/dashboard/' || pathname.endsWith('/dashboard/index.html');
 
+const isHomepagePath = (pathname) => pathname === '/' || pathname === '/index.html';
+
 const isStateChanging = (request) => !['GET', 'HEAD', 'OPTIONS'].includes(request.method.toUpperCase());
 
 const sameOriginMutationAllowed = (request, url) => {
@@ -114,6 +116,36 @@ const validateRequest = (request, url) => {
 const ensureAsset = (html, marker, markup, location = 'head') => {
   if (html.includes(marker)) return html;
   return html.replace(location === 'head' ? '</head>' : '</body>', `${markup}\n${location === 'head' ? '</head>' : '</body>'}`);
+};
+
+const prepareHomepage = async (response) => {
+  if (!response.ok) return response;
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  let html = await response.text();
+  html = ensureAsset(
+    html,
+    'homepage-motion-v1.css',
+    '  <link rel="stylesheet" href="/homepage-motion-v1.css" data-homepage-motion-v1="true" />',
+    'head'
+  );
+  html = ensureAsset(
+    html,
+    'homepage-motion-v1.js',
+    '  <script src="/homepage-motion-v1.js" defer data-homepage-motion-v1="true"></script>',
+    'body'
+  );
+
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+  headers.set('x-arstore-home-motion', 'global-premium-motion-v1');
+
+  return new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
 };
 
 const prepareDashboard = async (response) => {
@@ -213,6 +245,8 @@ export default {
     }
 
     if (isDashboardPath(url.pathname)) response = await prepareDashboard(response);
+    else if (isHomepagePath(url.pathname)) response = await prepareHomepage(response);
+
     return hardenResponse(response, url);
   }
 };
