@@ -310,11 +310,11 @@
     if (syncButton) { syncButton.disabled = true; syncButton.textContent = 'Syncing…'; }
     const status = document.getElementById('profitStatusText');
     const list = document.getElementById('profitCampaignList');
-    if (status) status.textContent = 'Refreshing token and combining Ads + Finance + Product data…';
+    if (status) status.textContent = 'Validating Shopee token and combining Ads + Finance + Product data…';
     if (!loaded && list) list.innerHTML = '<div class="profit-empty">Loading live economics…</div>';
 
     try {
-      await fetchJson('/api/shopee/status');
+      await fetchJson('/api/shopee/token-health');
       const [ads, finance, products] = await Promise.all([
         fetchJson('/api/shopee/ads'),
         fetchJson('/api/shopee/finance-v1-1'),
