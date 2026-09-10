@@ -1,0 +1,141 @@
+/* AR STORE Seller Dashboard — Mobile 390 V1 */
+
+html,body{max-width:100%;overflow-x:clip;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
+@media (max-width:480px){
+  :root{--page:12px;--radius:14px}
+
+  .dashboard-main{min-width:0;width:100%;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+  .topbar{
+    min-height:56px;
+    padding:calc(8px + env(safe-area-inset-top)) 12px 8px;
+    gap:8px;
+    grid-template-columns:40px minmax(0,1fr) 36px;
+  }
+  .menu-button{width:38px;height:38px;min-height:38px}
+  .topbar-title{min-width:0}
+  .topbar-title strong{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar-actions{gap:0;min-width:0}
+  .topbar-actions .profile{padding:0;border:0}
+  .profile>span{width:34px;height:34px}
+
+  .sidebar{
+    width:min(310px,88vw);
+    padding:calc(18px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+  }
+  .side-nav{gap:16px;padding-top:16px}
+  .nav-item{min-height:46px;padding:10px 11px;font-size:12px}
+
+  .view{padding:14px 12px 0}
+  .page-intro,.compact-intro,.overview-live-intro{
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+    margin:8px 0 18px!important;
+    padding-bottom:0!important;
+  }
+  .page-intro h1,.compact-intro h1,.overview-live-intro h1{
+    max-width:100%!important;
+    font-size:clamp(40px,12.2vw,48px)!important;
+    line-height:.86!important;
+    letter-spacing:-.045em!important;
+    overflow-wrap:normal;
+    word-break:normal;
+  }
+  .page-intro>p,.overview-live-intro>p{max-width:100%!important;font-size:10.5px;line-height:1.5}
+  .eyebrow{font-size:7px}
+
+  .live-strip{
+    min-height:auto;
+    padding:10px 11px;
+    border-radius:13px;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center!important;
+    gap:8px!important;
+  }
+  .live-strip>div:first-child{min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .live-strip>div:first-child strong{font-size:8px;letter-spacing:.08em;white-space:nowrap}
+  .live-strip>div:first-child small{width:100%;padding-left:15px;font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .live-strip .ghost-button{min-height:36px!important;padding:8px 10px;font-size:7px;white-space:nowrap}
+
+  /* Overview: primary live number gets full width; secondary KPIs stay compact. */
+  .overview-metrics,.metrics-grid,.metrics-grid.four{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .overview-metrics .metric-card.hero-metric,
+  .metrics-grid .metric-card.hero-metric{grid-column:1 / -1!important}
+  .metric-card{min-height:108px!important;padding:12px!important;border-radius:14px}
+  .metric-card small{font-size:7.5px;letter-spacing:.08em}
+  .metric-card strong,.overview-metrics .metric-card strong{font-size:clamp(27px,8.2vw,35px)!important;line-height:.95}
+  .overview-metrics .metric-card[data-exact-idr="true"] strong{font-size:clamp(32px,10vw,39px)!important;white-space:nowrap!important}
+  .delta{font-size:8px;line-height:1.35}
+
+  .dashboard-grid{gap:8px!important;margin-top:8px!important}
+  .dashboard-grid.two-one,.dashboard-grid.equal,.overview-primary-grid,.overview-secondary-grid{grid-template-columns:1fr!important}
+  .panel{padding:14px!important;border-radius:14px!important}
+  .panel-head{margin-bottom:14px;gap:8px;align-items:flex-start}
+  .panel h2{font-size:clamp(24px,7.7vw,31px)!important;line-height:.95}
+  .muted{font-size:8.5px;line-height:1.4}
+  .text-button{font-size:7.5px;white-space:nowrap}
+
+  .overview-chart-panel{min-height:310px}
+  .overview-bars{
+    height:225px!important;
+    min-width:520px;
+    grid-template-columns:repeat(7,minmax(64px,1fr))!important;
+    gap:7px!important;
+    overflow:visible!important;
+    padding:10px 0 4px!important;
+  }
+  .overview-chart-panel{overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin}
+  .overview-bar-column{grid-template-rows:18px 1fr 18px!important;gap:5px!important}
+  .overview-bar-value{display:block!important;font-size:8px!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .overview-bar-track{min-height:150px!important}
+  .overview-bar-column small{font-size:7.5px!important;transform:none!important;white-space:nowrap}
+
+  .overview-health-list>div{padding:13px 0;grid-template-columns:1fr auto}
+  .overview-health-list span{font-size:10px}
+  .overview-health-list strong{font-size:21px}
+  .overview-health-list small{font-size:8px}
+
+  .overview-secondary-grid .panel{min-width:0}
+  .overview-order-table{min-width:520px!important}
+  .overview-order-table th,.overview-order-table td{padding:10px 8px;font-size:8px}
+  .overview-order-table th:nth-child(2),.overview-order-table td:nth-child(2){display:table-cell!important}
+
+  .overview-campaign-row{grid-template-columns:minmax(0,1fr) auto!important;padding:13px 0;gap:8px!important}
+  .overview-campaign-row>div:first-child{min-width:0}
+  .overview-campaign-row>div:first-child strong{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .overview-campaign-row>div:first-child small{font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .overview-campaign-numbers{grid-column:1 / -1;display:grid!important;grid-template-columns:1fr auto!important;text-align:left!important}
+  .overview-campaign-row .status-pill{grid-column:2;grid-row:1;justify-self:end!important;align-self:start}
+
+  .overview-system-row{grid-template-columns:1fr!important;gap:1px;border-radius:13px}
+  .overview-system-row span{padding:11px 12px;font-size:8px}
+
+  .production-health{top:calc(56px + env(safe-area-inset-top));margin:0 8px;border-radius:0 0 12px 12px}
+  .production-health-inner{padding:9px 10px;gap:8px}
+  .production-health strong{font-size:9px}.production-health small{font-size:8px}
+
+  .finance-v11-summary,.profit-config-grid,.profit-metric-grid,
+  .order-meta-grid,.logistics-meta-grid,.connection-meta{grid-template-columns:1fr!important}
+  .finance-v11-columns{grid-template-columns:1fr!important}
+
+  .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table-wrap table{min-width:560px}
+  .product-live-list,.order-live-list,.logistics-list,.finance-v11-list,.profit-list{overflow-x:hidden}
+
+  .order-live-card,.logistics-card,.finance-v11-order,.profit-campaign-card{border-radius:13px!important}
+  .order-live-head,.logistics-card-head,.finance-v11-head{gap:10px;align-items:flex-start}
+
+  :where(button,a,input,select,textarea){touch-action:manipulation}
+}
+
+@media (max-width:380px){
+  .view{padding-inline:10px}
+  .topbar{padding-inline:10px}
+  .page-intro h1,.compact-intro h1,.overview-live-intro h1{font-size:clamp(38px,12vw,45px)!important}
+  .metric-card strong,.overview-metrics .metric-card strong{font-size:clamp(25px,8vw,32px)!important}
+  .overview-metrics .metric-card[data-exact-idr="true"] strong{font-size:clamp(30px,9.5vw,36px)!important}
+}
