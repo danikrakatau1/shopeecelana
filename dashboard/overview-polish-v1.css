@@ -1,0 +1,44 @@
+/* AR STORE Seller Dashboard — Overview Polish V1 */
+
+/* Desktop hero: keep the editorial feel without letting the greeting dominate
+   the operational data below it. Mobile sizing remains controlled by the
+   existing dashboard hardening rules. */
+@media (min-width: 901px){
+  .overview-live-intro{
+    grid-template-columns:minmax(0,1.08fr) minmax(320px,.52fr);
+    align-items:center;
+    gap:clamp(36px,5vw,84px);
+    margin-top:12px;
+    margin-bottom:26px;
+    padding-bottom:0;
+  }
+  .overview-live-intro h1{
+    max-width:760px;
+    font-size:clamp(56px,5.15vw,82px);
+    line-height:.84;
+    letter-spacing:-.052em;
+  }
+  .overview-live-intro > p{
+    max-width:390px;
+    margin-bottom:0;
+    align-self:center;
+  }
+}
+
+/* Exact IDR values are intentionally allowed to use a little more width. */
+.overview-metrics .metric-card[data-exact-idr="true"] strong{
+  font-size:clamp(28px,2.45vw,44px);
+  white-space:nowrap;
+}
+.overview-bar-value[data-exact-idr="true"]{
+  overflow:visible;
+  text-overflow:clip;
+  letter-spacing:-.01em;
+}
+
+@media (max-width: 640px){
+  .overview-metrics .metric-card[data-exact-idr="true"] strong{
+    font-size:clamp(30px,9.4vw,40px);
+    white-space:normal;
+  }
+}
