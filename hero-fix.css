@@ -1,5 +1,5 @@
-/* AR STORE V1.5 — hero composition fix
-   Editorial layering stays, with the artwork deliberately lower to create a calmer top field. */
+/* AR STORE V1.6 — hero composition fix
+   Artwork is intentionally anchored lower on desktop so the top typography keeps more breathing room. */
 
 .hero {
   min-height: max(100svh, 760px);
@@ -19,7 +19,7 @@
 
 .hero-art {
   left: 68%;
-  top: 56%;
+  top: 64%;
   width: min(22vw, 300px);
   max-height: 54svh;
   z-index: 2;
@@ -79,7 +79,7 @@
 
   .hero-art {
     left: 68%;
-    top: 56%;
+    top: 64%;
     width: min(23vw, 280px);
   }
 
@@ -99,7 +99,7 @@
   }
 }
 
-/* Laptop / browser windows around the user's current 1338×805 view. */
+/* Laptop / browser windows around the current 1338×805 view. */
 @media (min-width: 901px) and (max-height: 840px) {
   .hero {
     min-height: 100svh;
@@ -121,7 +121,7 @@
 
   .hero-art {
     left: 69%;
-    top: 57%;
+    top: 66%;
     width: min(19vw, 245px);
     max-height: 50svh;
   }
@@ -163,7 +163,7 @@
   }
 }
 
-/* Extra-short desktop: smaller again and shifted farther down. */
+/* Extra-short desktop: keep the visual low while still fitting inside the viewport. */
 @media (min-width: 901px) and (max-height: 680px) {
   .hero {
     padding-top: 66px;
@@ -180,9 +180,9 @@
 
   .hero-art {
     left: 70%;
-    top: 58%;
+    top: 66%;
     width: min(16.5vw, 195px);
-    max-height: 48svh;
+    max-height: 44svh;
   }
 
   .hero-bottom {
