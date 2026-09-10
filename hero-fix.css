@@ -311,3 +311,21 @@
     margin-top: 8px;
   }
 }
+
+/* SHOP AR STORE / Video 02 color direction.
+   Replace the loud Shopee orange with a muted warm clay base.
+   When video 02 is wired in, this becomes the calm layer-2 tint above the video. */
+.shopee-bridge {
+  background: #75645c;
+  color: #f7f3ec;
+}
+
+.shopee-bridge .eyebrow,
+.shopee-bridge .bridge-bottom p {
+  color: rgba(247, 243, 236, .72);
+}
+
+.shopee-bridge .cta-arrow {
+  color: #f7f3ec;
+  border-color: rgba(247, 243, 236, .72);
+}
