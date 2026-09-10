@@ -1,0 +1,39 @@
+/* AR STORE Seller Dashboard — Production Readiness Hardening V1 */
+.network-guard-banner{
+  position:sticky;
+  top:63px;
+  z-index:28;
+  margin:0 var(--page);
+  min-height:44px;
+  padding:9px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid var(--line);
+  border-top:0;
+  border-radius:0 0 13px 13px;
+  background:rgba(246,243,236,.96);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  box-shadow:0 10px 30px rgba(18,18,15,.05);
+}
+.network-guard-banner[hidden]{display:none!important}
+.network-guard-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--warn);box-shadow:0 0 0 4px rgba(217,164,65,.12)}
+.network-guard-banner[data-state="error"] .network-guard-dot{background:var(--loss);box-shadow:0 0 0 4px rgba(201,103,92,.12)}
+.network-guard-banner>div{display:grid;gap:2px;min-width:0}
+.network-guard-banner strong{font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+.network-guard-banner small{font-size:8px;color:var(--muted);line-height:1.35;overflow-wrap:anywhere}
+
+/* Make error/empty states truthful and durable instead of visually collapsing. */
+:where(.overview-failed,.product-empty,.order-empty,.stock-empty,.logistics-empty,.ads-empty,.finance-empty,.profit-empty){min-height:90px}
+:where(.product-empty,.order-empty,.stock-empty,.logistics-empty,.ads-empty,.finance-empty,.profit-empty) strong{display:block;margin-bottom:4px}
+
+/* Guard loading/sync controls from accidental double submits. */
+button[disabled],button[aria-busy="true"]{pointer-events:none}
+
+@media(max-width:900px){.network-guard-banner{top:55px;margin:0 14px}}
+@media(max-width:640px){
+  .network-guard-banner{top:calc(56px + env(safe-area-inset-top));margin:0 8px;padding:9px 10px}
+  .network-guard-banner strong{font-size:8.5px}.network-guard-banner small{font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.network-guard-banner{backdrop-filter:none;-webkit-backdrop-filter:none}}
