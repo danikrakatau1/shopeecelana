@@ -1,4 +1,4 @@
-/* AR STORE V1.6 — hero composition fix
+/* AR STORE V1.7 — hero composition fix
    Artwork is intentionally anchored lower on desktop so the top typography keeps more breathing room. */
 
 .hero {
@@ -19,7 +19,7 @@
 
 .hero-art {
   left: 68%;
-  top: 64%;
+  top: 70%;
   width: min(22vw, 300px);
   max-height: 54svh;
   z-index: 2;
@@ -79,7 +79,7 @@
 
   .hero-art {
     left: 68%;
-    top: 64%;
+    top: 70%;
     width: min(23vw, 280px);
   }
 
@@ -121,7 +121,7 @@
 
   .hero-art {
     left: 69%;
-    top: 66%;
+    top: 72%;
     width: min(19vw, 245px);
     max-height: 50svh;
   }
@@ -180,7 +180,7 @@
 
   .hero-art {
     left: 70%;
-    top: 66%;
+    top: 72%;
     width: min(16.5vw, 195px);
     max-height: 44svh;
   }
