@@ -12,7 +12,7 @@ const PANEL_LABELS = {
   settings: 'Settings'
 };
 
-const LIVE_PANEL_RE = /<section class="view([^"]*)" data-panel="(overview|products|orders|stock|logistics|ads|finance|connection|settings)">[\s\S]*?<\/section>/g;
+const LIVE_PANEL_RE = /<section class="view([^"]*)" data-panel="(overview|products|orders|stock|logistics|ads|finance|connection|settings)"[^>]*>[\s\S]*?<\/section>/g;
 
 const cleanDashboardHtml = async (response) => {
   if (!response.ok) return response;
@@ -21,10 +21,8 @@ const cleanDashboardHtml = async (response) => {
 
   let html = await response.text();
 
-  // Remove all static seed/demo panel bodies from the response delivered to the
-  // browser. The panel nodes remain so the existing live modules can hydrate
-  // them normally. If a module is delayed, the user sees a truthful loading
-  // state instead of fabricated commerce data.
+  // Keep only truthful server-rendered loading shells. Existing browser modules
+  // hydrate these panel nodes with live Shopee/API data after the document loads.
   html = html.replace(LIVE_PANEL_RE, (_match, classSuffix, panelName) => {
     const label = PANEL_LABELS[panelName] || panelName;
     return `<section class="view${classSuffix}" data-panel="${panelName}" data-live-shell="server">
@@ -32,13 +30,13 @@ const cleanDashboardHtml = async (response) => {
           <div class="live-panel-shell-inner">
             <span class="live-panel-shell-dot" aria-hidden="true"></span>
             <strong>Loading ${label}</strong>
-            <small>Preparing live seller data. No demo values are shown.</small>
+            <small>Preparing live seller data. Waiting for the connected API source.</small>
           </div>
         </div>
       </section>`;
   });
 
-  // Eliminate legacy chrome that could flash before the production JS runs.
+  // Eliminate legacy chrome that could flash before production JavaScript runs.
   html = html.replace(/>DEMO DATA</g, '>SHOPEE API<');
   html = html.replace(/<small>Belum terhubung<\/small>/g, '<small>Checking connection…</small>');
   html = html.replace(/\s*<button class="icon-button" type="button" aria-label="Notifikasi">○<\/button>/g, '');
