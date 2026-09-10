@@ -177,3 +177,11 @@
   });
   if (location.hash === '#orders') loadOrders();
 })();
+
+if (!document.querySelector('script[data-stock-pricing-v1]')) {
+  const stockScript = document.createElement('script');
+  stockScript.src = './stock-pricing-v1.js';
+  stockScript.defer = true;
+  stockScript.dataset.stockPricingV1 = 'true';
+  document.head.appendChild(stockScript);
+}
