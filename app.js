@@ -66,19 +66,47 @@ const shopeeVideo = createBackgroundVideo({
   preload: 'metadata'
 });
 
-/* Video 02 / SHOP AR STORE — full-bleed framing.
-   Override the earlier contain treatment so the moving footage becomes the section itself,
-   not a video rectangle pasted on top of the taupe background. */
-if (shopeeVideo) {
-  shopeeVideo.host.style.minHeight = '62svh';
-  shopeeVideo.wrap.style.inset = '0';
-  shopeeVideo.wrap.style.display = 'block';
-  shopeeVideo.video.style.width = '100%';
-  shopeeVideo.video.style.height = '100%';
-  shopeeVideo.video.style.objectFit = 'cover';
-  shopeeVideo.video.style.objectPosition = '50% 42%';
-  shopeeVideo.video.style.transform = 'none';
-  shopeeVideo.video.style.opacity = '.50';
+/* Mobile Video No-Crop V1
+   Desktop keeps the cinematic cover treatment. Phone portrait and short
+   touch-landscape layouts switch both existing videos to contain so the full
+   source frame stays visible. The section's existing tonal background fills
+   any letterbox area without duplicating video decoding on mobile. */
+const mobileVideoFrame = window.matchMedia('(max-width: 640px), (pointer: coarse) and (max-height: 520px)');
+
+const applyVideoFraming = () => {
+  const mobile = mobileVideoFrame.matches;
+  document.documentElement.dataset.videoFit = mobile ? 'mobile-contain' : 'desktop-cover';
+
+  if (heroVideo) {
+    heroVideo.wrap.style.display = mobile ? 'grid' : '';
+    heroVideo.wrap.style.placeItems = mobile ? 'center' : '';
+    heroVideo.wrap.style.background = mobile ? '#d7d0c4' : '';
+    heroVideo.video.style.width = '100%';
+    heroVideo.video.style.height = '100%';
+    heroVideo.video.style.objectFit = mobile ? 'contain' : 'cover';
+    heroVideo.video.style.objectPosition = 'center center';
+    heroVideo.video.style.transform = mobile ? 'none' : '';
+  }
+
+  if (shopeeVideo) {
+    shopeeVideo.host.style.minHeight = '62svh';
+    shopeeVideo.wrap.style.inset = '0';
+    shopeeVideo.wrap.style.display = mobile ? 'grid' : 'block';
+    shopeeVideo.wrap.style.placeItems = mobile ? 'center' : '';
+    shopeeVideo.video.style.width = '100%';
+    shopeeVideo.video.style.height = '100%';
+    shopeeVideo.video.style.objectFit = mobile ? 'contain' : 'cover';
+    shopeeVideo.video.style.objectPosition = mobile ? 'center center' : '50% 42%';
+    shopeeVideo.video.style.transform = 'none';
+    shopeeVideo.video.style.opacity = '.50';
+  }
+};
+
+applyVideoFraming();
+if (typeof mobileVideoFrame.addEventListener === 'function') {
+  mobileVideoFrame.addEventListener('change', applyVideoFraming);
+} else if (typeof mobileVideoFrame.addListener === 'function') {
+  mobileVideoFrame.addListener(applyVideoFraming);
 }
 
 const managedVideos = [heroVideo, shopeeVideo].filter(Boolean);
