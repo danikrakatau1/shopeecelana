@@ -564,3 +564,29 @@
     object-fit: contain;
   }
 }
+
+/* AR STORE V1.9.1 — hero wordmark safe-frame fix.
+   Preserve the locked cinematic composition, but keep the AR STORE wordmark
+   comfortably inside the viewport on desktop, tablet and phones. */
+.hero-display {
+  padding-inline: clamp(12px, 2vw, 28px);
+  font-size: clamp(82px, 15vw, 220px);
+  line-height: .82;
+  letter-spacing: -.06em;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .hero-display {
+    padding-inline: max(14px, var(--page));
+    font-size: clamp(64px, 19vw, 138px);
+    line-height: .82;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero-display {
+    font-size: clamp(58px, 18vw, 88px);
+    line-height: .84;
+  }
+}
