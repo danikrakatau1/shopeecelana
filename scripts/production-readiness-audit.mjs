@@ -12,6 +12,7 @@ const worker = read('src/worker-v3-20.js');
 const network = read('dashboard/network-guard-v1.js');
 const homeMotionJs = read('homepage-motion-v1.js');
 const homeMotionCss = read('homepage-motion-v1.css');
+const homeApp = read('app.js');
 
 check('Wrangler points to worker-v3-20', wrangler.includes('"main": "./src/worker-v3-20.js"'));
 check('Homepage root runs worker first', wrangler.includes('"/"') && wrangler.includes('"/index.html"'));
@@ -88,6 +89,17 @@ check('Homepage motion has Lookbook signatures', homeMotionCss.includes('motion-
 check('Homepage motion has Shopee cinematic sequence', homeMotionCss.includes('motion-shopee'));
 check('Homepage motion has FAQ sequence', homeMotionCss.includes('motion-faq'));
 check('Homepage motion has footer finale', homeMotionCss.includes('motion-footer'));
+
+// Mobile Video No-Crop V1: preserve the entire source frame on phones while
+// retaining the desktop cinematic cover composition.
+let homeAppParses = true;
+try { new Function(homeApp); } catch (_) { homeAppParses = false; }
+check('Homepage app JavaScript parses', homeAppParses);
+check('Mobile video no-crop breakpoint exists', homeApp.includes("matchMedia('(max-width: 640px), (pointer: coarse) and (max-height: 520px)')"));
+check('Hero video switches to contain on mobile', homeApp.includes("heroVideo.video.style.objectFit = mobile ? 'contain' : 'cover'"));
+check('Shopee video switches to contain on mobile', homeApp.includes("shopeeVideo.video.style.objectFit = mobile ? 'contain' : 'cover'"));
+check('Mobile video framing keeps tonal letterbox fill', homeApp.includes("heroVideo.wrap.style.background = mobile ? '#d7d0c4' : ''"));
+check('Mobile video framing reacts to viewport changes', homeApp.includes("mobileVideoFrame.addEventListener('change', applyVideoFraming)"));
 
 const failed = checks.filter((item) => !item.pass);
 for (const item of checks) console.log(`${item.pass ? 'PASS' : 'FAIL'}  ${item.name}${item.detail ? ` — ${item.detail}` : ''}`);
