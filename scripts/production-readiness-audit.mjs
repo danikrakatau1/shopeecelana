@@ -14,6 +14,7 @@ const homeMotionJs = read('homepage-motion-v1.js');
 const homeMotionCss = read('homepage-motion-v1.css');
 
 check('Wrangler points to worker-v3-20', wrangler.includes('"main": "./src/worker-v3-20.js"'));
+check('Homepage root runs worker first', wrangler.includes('"/"') && wrangler.includes('"/index.html"'));
 check('Production worker consolidates from v3-12', worker.includes("import baseWorker from './worker-v3-12.js'"));
 check('Login rate limiter present', worker.includes('LOGIN_MAX_FAILURES') && worker.includes('too_many_login_attempts'));
 check('Cross-origin mutation guard present', worker.includes('cross_origin_request_blocked') && worker.includes('sameOriginMutationAllowed'));
