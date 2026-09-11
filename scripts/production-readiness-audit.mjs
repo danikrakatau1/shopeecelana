@@ -12,6 +12,7 @@ const worker = read('src/worker-v3-20.js');
 const network = read('dashboard/network-guard-v1.js');
 const homeMotionJs = read('homepage-motion-v1.js');
 const homeMotionCss = read('homepage-motion-v1.css');
+const heroFixCss = read('hero-fix.css');
 
 check('Wrangler points to worker-v3-20', wrangler.includes('"main": "./src/worker-v3-20.js"'));
 check('Homepage root runs worker first', wrangler.includes('"/"') && wrangler.includes('"/index.html"'));
@@ -88,6 +89,13 @@ check('Homepage motion has Lookbook signatures', homeMotionCss.includes('motion-
 check('Homepage motion has Shopee cinematic sequence', homeMotionCss.includes('motion-shopee'));
 check('Homepage motion has FAQ sequence', homeMotionCss.includes('motion-faq'));
 check('Homepage motion has footer finale', homeMotionCss.includes('motion-footer'));
+
+// Hero wordmark safe-frame regression guard.
+check('Hero wordmark safe-frame fix present', heroFixCss.includes('AR STORE V1.9.1 — hero wordmark safe-frame fix'));
+check('Hero wordmark has horizontal breathing room', heroFixCss.includes('padding-inline: clamp(12px, 2vw, 28px)'));
+check('Hero wordmark desktop size is edge-safe', heroFixCss.includes('font-size: clamp(82px, 15vw, 220px)'));
+check('Hero wordmark tablet size is edge-safe', heroFixCss.includes('font-size: clamp(64px, 19vw, 138px)'));
+check('Hero wordmark phone size is edge-safe', heroFixCss.includes('font-size: clamp(58px, 18vw, 88px)'));
 
 const failed = checks.filter((item) => !item.pass);
 for (const item of checks) console.log(`${item.pass ? 'PASS' : 'FAIL'}  ${item.name}${item.detail ? ` — ${item.detail}` : ''}`);
