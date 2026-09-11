@@ -15,6 +15,8 @@
     "directory": ".",
     "binding": "ASSETS",
     "run_worker_first": [
+      "/",
+      "/index.html",
       "/dashboard",
       "/dashboard/*",
       "/seller-login",
