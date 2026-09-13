@@ -1,4 +1,5 @@
 import baseWorker from './worker-v3-9.js';
+import { shopeeFetch } from './shopee-egress.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -93,7 +94,7 @@ const parseShopeeError = (data, fallback = 'Shopee request failed') =>
 const shopGet = async (path, token, env, params = {}) => {
   try {
     const endpoint = await buildShopEndpoint(path, token, env, params);
-    const response = await fetch(endpoint.toString(), { headers: { accept: 'application/json' } });
+    const response = await shopeeFetch(env, endpoint.toString(), { headers: { accept: 'application/json' } });
     const text = await response.text();
     let data;
     try { data = JSON.parse(text); }
