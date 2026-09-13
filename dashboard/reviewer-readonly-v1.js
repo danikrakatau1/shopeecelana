@@ -1,6 +1,24 @@
 (() => {
   'use strict';
 
+  const setText = (node, value) => {
+    if (node) node.textContent = value;
+  };
+
+  const applyReviewerIdentity = () => {
+    const profile = document.querySelector('.topbar-actions .profile');
+    if (profile) {
+      setText(profile.firstElementChild, 'SR');
+      setText(profile.querySelector('strong'), 'Shopee Reviewer');
+      setText(profile.querySelector('small'), 'Read-only Reviewer');
+      profile.dataset.reviewerIdentity = 'true';
+    }
+
+    setText(document.querySelector('.seller-chip'), 'REVIEWER');
+    setText(document.querySelector('.topbar-title > span'), 'AR STORE / REVIEW ACCESS');
+    document.title = 'AR STORE® — Shopee Review Dashboard';
+  };
+
   const applyReviewerMode = async () => {
     let session = null;
     try {
@@ -18,6 +36,7 @@
 
     document.documentElement.dataset.reviewerMode = 'true';
     if (document.body) document.body.dataset.reviewerMode = 'true';
+    applyReviewerIdentity();
 
     if (document.querySelector('[data-reviewer-readonly-pill]')) return;
 
