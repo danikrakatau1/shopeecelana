@@ -1,5 +1,6 @@
 import baseWorker from './worker-v3-2.js';
 import { shopeeFetch } from './shopee-egress.js';
+import { getFreshShopeeToken } from './shopee-token.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -111,38 +112,17 @@ const shopGet = async (path, token, env, params = {}) => {
 };
 
 const getFreshToken = async (request, env) => {
-  const statusUrl = new URL('/api/shopee/status', request.url);
-  const statusRequest = new Request(statusUrl.toString(), {
-    method: 'GET',
-    headers: request.headers
-  });
-  const statusResponse = await baseWorker.fetch(statusRequest, env);
-
-  let statusPayload = null;
-  try { statusPayload = await statusResponse.clone().json(); } catch (_) {}
-  if (!statusResponse.ok || !statusPayload?.connected) {
+  const fresh = await getFreshShopeeToken(request, env);
+  if (!fresh.ok) {
     return {
       ok: false,
       response: json({
-        error: statusPayload?.refreshError || statusPayload?.error || 'shopee_not_connected',
-        message: statusPayload?.message || null
-      }, statusResponse.status === 401 ? 401 : 503)
+        error: fresh.error || 'shopee_not_connected',
+        message: fresh.message || null
+      }, fresh.error === 'shopee_not_connected' ? 401 : 503)
     };
   }
-
-  const refreshedEncrypted = getEncryptedTokenFromSetCookie(statusResponse.headers);
-  const requestEncrypted = parseCookies(request)[SHOPEE_COOKIE];
-  const token = await decryptObject(refreshedEncrypted || requestEncrypted, env.SESSION_SECRET);
-  if (!token?.access_token || !token?.shop_id) {
-    return { ok: false, response: json({ error: 'shopee_token_unavailable' }, 401) };
-  }
-
-  return {
-    ok: true,
-    token,
-    setCookie: refreshedEncrypted ? statusResponse.headers.get('set-cookie') : null,
-    refreshed: Boolean(refreshedEncrypted)
-  };
+  return fresh;
 };
 
 const asArray = (value) => Array.isArray(value) ? value : [];
