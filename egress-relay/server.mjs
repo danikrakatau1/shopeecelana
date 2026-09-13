@@ -4,7 +4,7 @@ import net from 'node:net';
 import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 const PORT = Number(process.env.PORT || 3000);
-const RELAY_VERSION = '1.3.1';
+const RELAY_VERSION = '1.3.2';
 const MAX_BODY_BYTES = 1024 * 1024;
 const MAX_CLOCK_SKEW_MS = 90_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
@@ -14,6 +14,22 @@ const EGRESS_IP_CHECK_URL = 'https://api.ipify.org?format=json';
 const ALLOWED_METHODS = new Set(['GET', 'POST']);
 const FORWARDED_HEADERS = new Set(['accept', 'content-type']);
 const STATIC_PROXY_PROVIDERS = new Set(['node4', 'noble']);
+const SAFE_FORWARD_REASONS = new Set([
+  'target_url_invalid',
+  'target_protocol_not_allowed',
+  'target_host_not_allowed',
+  'target_credentials_not_allowed',
+  'target_port_not_allowed',
+  'method_not_allowed',
+  'static_proxy_provider_invalid',
+  'static_proxy_url_invalid',
+  'static_proxy_protocol_invalid',
+  'static_proxy_provider_mismatch',
+  'static_proxy_host_invalid',
+  'static_proxy_provider_required_for_ip',
+  'static_proxy_credentials_missing',
+  'static_proxy_port_invalid'
+]);
 
 let staticDispatcher = null;
 let staticDispatcherKey = null;
@@ -24,6 +40,11 @@ const safeErrorDiagnostic = (error) => ({
   code: error?.code ? String(error.code).slice(0, 120) : null,
   causeCode: error?.cause?.code ? String(error.cause.code).slice(0, 120) : null
 });
+
+const safeForwardReason = (error) => {
+  const reason = String(error?.message || '');
+  return SAFE_FORWARD_REASONS.has(reason) ? reason : null;
+};
 
 const logEvent = (event, fields = {}) => {
   console.log(JSON.stringify({
@@ -189,7 +210,13 @@ const sanitizeForwardHeaders = (headers = {}) => {
 };
 
 const forwardShopeeRequest = async (payload, requestId) => {
-  const target = new URL(String(payload?.url || ''));
+  let target;
+  try {
+    target = new URL(String(payload?.url || ''));
+  } catch {
+    throw new Error('target_url_invalid');
+  }
+
   if (target.protocol !== 'https:') throw new Error('target_protocol_not_allowed');
   if (!isShopeeHostAllowed(target.hostname)) throw new Error('target_host_not_allowed');
   if (target.username || target.password) throw new Error('target_credentials_not_allowed');
@@ -396,12 +423,16 @@ const server = http.createServer(async (req, res) => {
   } catch (error) {
     const reason = error?.name === 'AbortError' ? 'upstream_timeout' : 'upstream_fetch_failed';
     const diagnostic = safeErrorDiagnostic(error);
-    logEvent('forward_failed', { requestId, reason, ...diagnostic });
+    const internalReason = safeForwardReason(error);
+    logEvent('forward_failed', { requestId, reason, internalReason, ...diagnostic });
     return json(res, reason === 'upstream_timeout' ? 504 : 502, {
       error: reason,
       stage: 'relay_to_upstream',
       requestId,
-      diagnostic
+      diagnostic: {
+        ...diagnostic,
+        internalReason
+      }
     }, {
       'x-arstore-egress-request-id': requestId
     });
