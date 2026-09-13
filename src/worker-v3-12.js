@@ -4,7 +4,9 @@ import { shopeeFetch } from './shopee-egress.js';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const SHOPEE_COOKIE = 'arstore_shopee';
+const OAUTH_COOKIE = 'arstore_oauth';
 const SHOPEE_COOKIE_TTL = 60 * 60 * 24 * 30;
+const TOKEN_REFRESH_WINDOW = 15 * 60;
 const SHOPEE_DEFAULT_BASE = 'https://partner.shopeemobile.com';
 
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
@@ -79,9 +81,17 @@ const hmacHex = async (secret, value) => {
 
 const getShopeeBase = (env) => (env.SHOPEE_API_BASE || SHOPEE_DEFAULT_BASE).replace(/\/$/, '');
 const shopeeCookie = (token) => `${SHOPEE_COOKIE}=${token}; Path=/api/shopee; HttpOnly; Secure; SameSite=Lax; Max-Age=${SHOPEE_COOKIE_TTL}`;
+const clearOauthCookie = () => `${OAUTH_COOKIE}=; Path=/shopee/callback; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
 const parseShopeeError = (data, fallback = 'Shopee request failed') =>
   data?.message || data?.error || data?.debug_message || fallback;
+
+const maskPartnerId = (value) => {
+  const text = String(value || '');
+  if (!text) return 'Not configured';
+  if (text.length <= 4) return '••••';
+  return `${'•'.repeat(Math.min(text.length - 4, 8))}${text.slice(-4)}`;
+};
 
 const buildPublicEndpoint = async (path, env) => {
   const timestamp = Math.floor(Date.now() / 1000);
@@ -106,6 +116,15 @@ const buildShopEndpoint = async (path, token, env) => {
   return endpoint;
 };
 
+const sessionIsValid = async (request, env) => {
+  const sessionUrl = new URL('/api/auth/session', request.url);
+  const response = await baseWorker.fetch(new Request(sessionUrl.toString(), {
+    method: 'GET',
+    headers: request.headers
+  }), env);
+  return response.ok;
+};
+
 const shopInfoProbe = async (token, env) => {
   try {
     const endpoint = await buildShopEndpoint('/api/v2/shop/get_shop_info', token, env);
@@ -126,7 +145,7 @@ const shopInfoProbe = async (token, env) => {
 
 const refreshShopeeToken = async (token, env) => {
   if (!token?.refresh_token || !token?.shop_id) {
-    return { ok: false, message: 'Shopee refresh token is missing. Reconnect Shopee.' };
+    return { ok: false, error: 'refresh_token_missing', message: 'Shopee refresh token is missing. Reconnect Shopee.' };
   }
   try {
     const path = '/api/v2/auth/access_token/get';
@@ -142,7 +161,7 @@ const refreshShopeeToken = async (token, env) => {
     });
     const data = await response.json();
     if (!response.ok || data?.error || !data?.access_token) {
-      return { ok: false, message: parseShopeeError(data, 'Shopee token refresh failed') };
+      return { ok: false, error: 'refresh_failed', message: parseShopeeError(data, 'Shopee token refresh failed') };
     }
     const now = Math.floor(Date.now() / 1000);
     return {
@@ -157,19 +176,185 @@ const refreshShopeeToken = async (token, env) => {
       }
     };
   } catch (_) {
-    return { ok: false, message: 'Shopee token refresh unreachable' };
+    return { ok: false, error: 'refresh_unreachable', message: 'Shopee token refresh unreachable' };
   }
+};
+
+const getFreshToken = async (request, env, minValidity = TOKEN_REFRESH_WINDOW) => {
+  const encrypted = parseCookies(request)[SHOPEE_COOKIE];
+  const token = await decryptObject(encrypted, env.SESSION_SECRET);
+  if (!token?.access_token || !token?.shop_id) return { ok: false, error: 'shopee_not_connected', token: null };
+
+  const now = Math.floor(Date.now() / 1000);
+  const remaining = token.expires_at ? token.expires_at - now : Number.MAX_SAFE_INTEGER;
+  if (remaining > minValidity) return { ok: true, token, refreshed: false, setCookie: null };
+
+  const refreshed = await refreshShopeeToken(token, env);
+  if (!refreshed.ok) return { ...refreshed, token };
+  const nextEncrypted = await encryptObject(refreshed.token, env.SESSION_SECRET);
+  return {
+    ok: true,
+    token: refreshed.token,
+    refreshed: true,
+    setCookie: shopeeCookie(nextEncrypted)
+  };
 };
 
 const looksLikeTokenError = (message = '') => /access[_\s-]*token|invalid token|token.*invalid|token.*expired/i.test(String(message));
 
+const handleShopeeStatus = async (request, env) => {
+  if (!(await sessionIsValid(request, env))) return json({ error: 'unauthorized' }, 401);
+
+  const configured = Boolean(env.SHOPEE_PARTNER_ID && env.SHOPEE_PARTNER_KEY);
+  const callbackUrl = env.SHOPEE_REDIRECT_URL || `${new URL(request.url).origin}/shopee/callback`;
+  if (!configured || !env.SESSION_SECRET) {
+    return json({
+      configured,
+      connected: false,
+      partnerId: maskPartnerId(env.SHOPEE_PARTNER_ID),
+      shopId: null,
+      tokenExpiresAt: null,
+      callbackUrl,
+      storage: 'not connected'
+    });
+  }
+
+  const fresh = await getFreshToken(request, env);
+  if (!fresh.ok) {
+    const token = fresh.token || await decryptObject(parseCookies(request)[SHOPEE_COOKIE], env.SESSION_SECRET);
+    return json({
+      configured: true,
+      connected: Boolean(token?.access_token && token?.shop_id),
+      partnerId: maskPartnerId(env.SHOPEE_PARTNER_ID),
+      shopId: token?.shop_id ? String(token.shop_id) : null,
+      tokenExpiresAt: token?.expires_at || null,
+      callbackUrl,
+      storage: token ? 'encrypted HttpOnly cookie' : 'not connected',
+      refreshError: fresh.error || null
+    });
+  }
+
+  return json({
+    configured: true,
+    connected: true,
+    partnerId: maskPartnerId(env.SHOPEE_PARTNER_ID),
+    shopId: String(fresh.token.shop_id),
+    tokenExpiresAt: fresh.token.expires_at || null,
+    tokenRefreshed: fresh.refreshed,
+    callbackUrl,
+    storage: 'encrypted HttpOnly cookie'
+  }, 200, fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
+};
+
+const handleShopInfo = async (request, env) => {
+  if (!(await sessionIsValid(request, env))) return json({ error: 'unauthorized' }, 401);
+  if (!env.SESSION_SECRET || !env.SHOPEE_PARTNER_ID || !env.SHOPEE_PARTNER_KEY) {
+    return json({ error: 'shopee_not_configured' }, 503);
+  }
+
+  const fresh = await getFreshToken(request, env);
+  if (!fresh.ok) {
+    return json({
+      error: fresh.error || 'shopee_token_refresh_failed',
+      message: fresh.message || null
+    }, fresh.error === 'shopee_not_connected' ? 401 : 502);
+  }
+
+  const result = await shopInfoProbe(fresh.token, env);
+  if (!result.ok) {
+    return json({ error: 'shopee_api_error', message: result.message }, 502,
+      fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
+  }
+
+  return json({
+    ok: true,
+    shop: result.data?.response || result.data,
+    tokenRefreshed: fresh.refreshed
+  }, 200, fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
+};
+
+const handleShopeeCallback = async (request, env) => {
+  const requestUrl = new URL(request.url);
+  if (!(await sessionIsValid(request, env))) {
+    const login = new URL('/seller-login/', requestUrl.origin);
+    login.searchParams.set('next', '/dashboard/');
+    return Response.redirect(login.toString(), 302);
+  }
+  if (!env.SESSION_SECRET || !env.SHOPEE_PARTNER_ID || !env.SHOPEE_PARTNER_KEY) {
+    const destination = new URL('/dashboard/', requestUrl.origin);
+    destination.searchParams.set('shopee', 'error');
+    destination.searchParams.set('reason', 'configuration');
+    destination.hash = 'connection';
+    return Response.redirect(destination.toString(), 302);
+  }
+  if (!parseCookies(request)[OAUTH_COOKIE]) {
+    const destination = new URL('/dashboard/', requestUrl.origin);
+    destination.searchParams.set('shopee', 'error');
+    destination.searchParams.set('reason', 'oauth_session');
+    destination.hash = 'connection';
+    return Response.redirect(destination.toString(), 302);
+  }
+
+  const code = requestUrl.searchParams.get('code');
+  const shopId = requestUrl.searchParams.get('shop_id');
+  if (!code || !shopId) {
+    const destination = new URL('/dashboard/', requestUrl.origin);
+    destination.searchParams.set('shopee', 'error');
+    destination.searchParams.set('reason', 'missing_code');
+    destination.hash = 'connection';
+    return Response.redirect(destination.toString(), 302);
+  }
+
+  let tokenResponse;
+  try {
+    const endpoint = await buildPublicEndpoint('/api/v2/auth/token/get', env);
+    const response = await shopeeFetch(env, endpoint.toString(), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({
+        code,
+        shop_id: Number(shopId),
+        partner_id: Number(env.SHOPEE_PARTNER_ID)
+      })
+    });
+    tokenResponse = await response.json();
+  } catch (_) {
+    const destination = new URL('/dashboard/', requestUrl.origin);
+    destination.searchParams.set('shopee', 'error');
+    destination.searchParams.set('reason', 'token_exchange');
+    destination.hash = 'connection';
+    return Response.redirect(destination.toString(), 302);
+  }
+
+  if (!tokenResponse?.access_token || tokenResponse?.error) {
+    const destination = new URL('/dashboard/', requestUrl.origin);
+    destination.searchParams.set('shopee', 'error');
+    destination.searchParams.set('reason', 'token_rejected');
+    destination.hash = 'connection';
+    return Response.redirect(destination.toString(), 302);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    access_token: tokenResponse.access_token,
+    refresh_token: tokenResponse.refresh_token || null,
+    expire_in: Number(tokenResponse.expire_in || 0),
+    expires_at: Number(tokenResponse.expire_in || 0) ? now + Number(tokenResponse.expire_in) : null,
+    shop_id: String(shopId),
+    connected_at: now
+  };
+  const encrypted = await encryptObject(payload, env.SESSION_SECRET);
+  const destination = new URL('/dashboard/', requestUrl.origin);
+  destination.searchParams.set('shopee', 'connected');
+  destination.hash = 'connection';
+  const headers = new Headers({ location: destination.toString(), 'cache-control': 'no-store' });
+  headers.append('set-cookie', shopeeCookie(encrypted));
+  headers.append('set-cookie', clearOauthCookie());
+  return new Response(null, { status: 302, headers });
+};
+
 const handleTokenHealth = async (request, env) => {
-  const sessionUrl = new URL('/api/auth/session', request.url);
-  const sessionResponse = await baseWorker.fetch(new Request(sessionUrl.toString(), {
-    method: 'GET',
-    headers: request.headers
-  }), env);
-  if (!sessionResponse.ok) return json({ error: 'unauthorized' }, 401);
+  if (!(await sessionIsValid(request, env))) return json({ error: 'unauthorized' }, 401);
 
   if (!env.SESSION_SECRET || !env.SHOPEE_PARTNER_ID || !env.SHOPEE_PARTNER_KEY) {
     return json({ error: 'shopee_not_configured' }, 503);
@@ -220,8 +405,17 @@ const handleTokenHealth = async (request, env) => {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/shopee/status' && request.method === 'GET') {
+      return handleShopeeStatus(request, env);
+    }
+    if (url.pathname === '/api/shopee/shop-info' && request.method === 'GET') {
+      return handleShopInfo(request, env);
+    }
     if (url.pathname === '/api/shopee/token-health' && request.method === 'GET') {
       return handleTokenHealth(request, env);
+    }
+    if (url.pathname === '/shopee/callback' && request.method === 'GET') {
+      return handleShopeeCallback(request, env);
     }
     return baseWorker.fetch(request, env);
   }
