@@ -126,6 +126,12 @@ const prepareHomepage = async (response) => {
   let html = await response.text();
   html = ensureAsset(
     html,
+    'homepage-overflow-guard-v1.css',
+    '  <link rel="stylesheet" href="/homepage-overflow-guard-v1.css" data-homepage-overflow-guard-v1="true" />',
+    'head'
+  );
+  html = ensureAsset(
+    html,
     'homepage-motion-v1.css',
     '  <link rel="stylesheet" href="/homepage-motion-v1.css" data-homepage-motion-v1="true" />',
     'head'
