@@ -1,5 +1,6 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
+import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 const PORT = Number(process.env.PORT || 3000);
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -7,6 +8,9 @@ const MAX_CLOCK_SKEW_MS = 90_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 const ALLOWED_METHODS = new Set(['GET', 'POST']);
 const FORWARDED_HEADERS = new Set(['accept', 'content-type']);
+
+let nobleDispatcher = null;
+let nobleDispatcherKey = null;
 
 const json = (res, status, body) => {
   const payload = JSON.stringify(body);
@@ -48,6 +52,38 @@ const isShopeeHostAllowed = (hostname) => {
   if (configured.length) return configured.includes(host);
 
   return host === 'shopeemobile.com' || host.endsWith('.shopeemobile.com');
+};
+
+const validateNobleProxyUrl = (value) => {
+  if (!value) return null;
+  let proxy;
+  try {
+    proxy = new URL(String(value));
+  } catch {
+    throw new Error('noble_proxy_url_invalid');
+  }
+
+  if (proxy.protocol !== 'https:') throw new Error('noble_proxy_protocol_invalid');
+  const host = proxy.hostname.toLowerCase();
+  if (!(host === 'noble-ip.com' || host.endsWith('.noble-ip.com'))) {
+    throw new Error('noble_proxy_host_invalid');
+  }
+  if (!proxy.username || !proxy.password) throw new Error('noble_proxy_credentials_missing');
+  if (proxy.port && proxy.port !== '3129') throw new Error('noble_proxy_port_invalid');
+
+  return proxy.toString();
+};
+
+const getNobleDispatcher = () => {
+  const proxyUrl = validateNobleProxyUrl(process.env.NOBLE_PROXY_URL || '');
+  if (!proxyUrl) return null;
+
+  if (!nobleDispatcher || nobleDispatcherKey !== proxyUrl) {
+    nobleDispatcher = new ProxyAgent(proxyUrl);
+    nobleDispatcherKey = proxyUrl;
+  }
+
+  return nobleDispatcher;
 };
 
 const safeSignatureEqual = (providedHex, expectedHex) => {
@@ -102,17 +138,19 @@ const forwardShopeeRequest = async (payload) => {
 
   const headers = sanitizeForwardHeaders(payload?.headers);
   const body = method === 'GET' ? undefined : String(payload?.body ?? '');
+  const dispatcher = getNobleDispatcher();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
   try {
-    return await fetch(target, {
+    return await undiciFetch(target, {
       method,
       headers,
       body,
       redirect: 'manual',
-      signal: controller.signal
+      signal: controller.signal,
+      ...(dispatcher ? { dispatcher } : {})
     });
   } finally {
     clearTimeout(timeout);
@@ -123,11 +161,23 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
   if (req.method === 'GET' && url.pathname === '/health') {
+    let staticEgressConfigured = false;
+    let staticEgressValid = false;
+    try {
+      staticEgressConfigured = Boolean(process.env.NOBLE_PROXY_URL);
+      staticEgressValid = staticEgressConfigured ? Boolean(validateNobleProxyUrl(process.env.NOBLE_PROXY_URL)) : false;
+    } catch {
+      staticEgressValid = false;
+    }
+
     return json(res, 200, {
       ok: true,
       service: 'arstore-shopee-egress-relay',
       configured: Boolean(process.env.EGRESS_SHARED_SECRET),
-      version: '1.0.0'
+      staticEgressConfigured,
+      staticEgressValid,
+      egressMode: staticEgressValid ? 'noble-static-proxy' : 'direct',
+      version: '1.1.0'
     });
   }
 
@@ -168,7 +218,7 @@ const server = http.createServer(async (req, res) => {
       'content-type': contentType,
       'cache-control': 'no-store, max-age=0',
       'x-content-type-options': 'nosniff',
-      'x-arstore-egress-relay': 'v1'
+      'x-arstore-egress-relay': 'v1.1'
     });
     return res.end(body);
   } catch (error) {
