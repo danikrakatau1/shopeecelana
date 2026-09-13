@@ -1,5 +1,6 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
+import net from 'node:net';
 import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -8,6 +9,7 @@ const MAX_CLOCK_SKEW_MS = 90_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 const ALLOWED_METHODS = new Set(['GET', 'POST']);
 const FORWARDED_HEADERS = new Set(['accept', 'content-type']);
+const STATIC_PROXY_PROVIDERS = new Set(['node4', 'noble']);
 
 let staticDispatcher = null;
 let staticDispatcherKey = null;
@@ -61,6 +63,13 @@ const staticProxyProvider = (hostname) => {
   return null;
 };
 
+const configuredStaticProxyProvider = () => {
+  const provider = String(process.env.STATIC_PROXY_PROVIDER || '').trim().toLowerCase();
+  if (!provider) return null;
+  if (!STATIC_PROXY_PROVIDERS.has(provider)) throw new Error('static_proxy_provider_invalid');
+  return provider;
+};
+
 const getConfiguredStaticProxyUrl = () => String(
   process.env.STATIC_PROXY_URL || process.env.NOBLE_PROXY_URL || ''
 ).trim();
@@ -78,8 +87,17 @@ const validateStaticProxyUrl = (value) => {
     throw new Error('static_proxy_protocol_invalid');
   }
 
-  const provider = staticProxyProvider(proxy.hostname);
+  const hostProvider = staticProxyProvider(proxy.hostname);
+  const providerHint = configuredStaticProxyProvider();
+  const isIpEndpoint = net.isIP(proxy.hostname) !== 0;
+
+  if (hostProvider && providerHint && hostProvider !== providerHint) {
+    throw new Error('static_proxy_provider_mismatch');
+  }
+
+  const provider = hostProvider || (isIpEndpoint ? providerHint : null);
   if (!provider) throw new Error('static_proxy_host_invalid');
+  if (isIpEndpoint && !providerHint) throw new Error('static_proxy_provider_required_for_ip');
   if (!proxy.username || !proxy.password) throw new Error('static_proxy_credentials_missing');
 
   const port = proxy.port ? Number(proxy.port) : null;
@@ -87,7 +105,7 @@ const validateStaticProxyUrl = (value) => {
     throw new Error('static_proxy_port_invalid');
   }
 
-  return { url: proxy.toString(), provider };
+  return { url: proxy.toString(), provider, endpointType: isIpEndpoint ? 'ip' : 'hostname' };
 };
 
 const getStaticDispatcher = () => {
@@ -178,17 +196,20 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'GET' && url.pathname === '/health') {
     const configuredUrl = getConfiguredStaticProxyUrl();
-    let staticEgressConfigured = Boolean(configuredUrl);
+    const staticEgressConfigured = Boolean(configuredUrl);
     let staticEgressValid = false;
     let staticEgressProvider = null;
+    let staticEgressEndpointType = null;
 
     try {
       const validated = staticEgressConfigured ? validateStaticProxyUrl(configuredUrl) : null;
       staticEgressValid = Boolean(validated);
       staticEgressProvider = validated?.provider || null;
+      staticEgressEndpointType = validated?.endpointType || null;
     } catch {
       staticEgressValid = false;
       staticEgressProvider = null;
+      staticEgressEndpointType = null;
     }
 
     return json(res, 200, {
@@ -198,8 +219,9 @@ const server = http.createServer(async (req, res) => {
       staticEgressConfigured,
       staticEgressValid,
       staticEgressProvider,
+      staticEgressEndpointType,
       egressMode: staticEgressValid ? 'static-proxy' : 'direct',
-      version: '1.2.0'
+      version: '1.2.1'
     });
   }
 
@@ -240,7 +262,7 @@ const server = http.createServer(async (req, res) => {
       'content-type': contentType,
       'cache-control': 'no-store, max-age=0',
       'x-content-type-options': 'nosniff',
-      'x-arstore-egress-relay': 'v1.2'
+      'x-arstore-egress-relay': 'v1.2.1'
     });
     return res.end(body);
   } catch (error) {
