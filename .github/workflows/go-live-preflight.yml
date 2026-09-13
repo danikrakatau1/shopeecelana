@@ -19,5 +19,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check reviewer auth syntax
+        run: |
+          node --check src/worker-v3-20.js
+          node --check dashboard/reviewer-readonly-v1.js
       - name: Run go-live preflight
         run: node scripts/go-live-preflight.mjs
