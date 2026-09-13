@@ -7,12 +7,16 @@ const PORT = Number(process.env.PORT || 3000);
 const MAX_BODY_BYTES = 1024 * 1024;
 const MAX_CLOCK_SKEW_MS = 90_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
+const EGRESS_IP_TIMEOUT_MS = 10_000;
+const EGRESS_IP_CACHE_TTL_MS = 5 * 60_000;
+const EGRESS_IP_CHECK_URL = 'https://api.ipify.org?format=json';
 const ALLOWED_METHODS = new Set(['GET', 'POST']);
 const FORWARDED_HEADERS = new Set(['accept', 'content-type']);
 const STATIC_PROXY_PROVIDERS = new Set(['node4', 'noble']);
 
 let staticDispatcher = null;
 let staticDispatcherKey = null;
+let egressIpCache = null;
 
 const json = (res, status, body) => {
   const payload = JSON.stringify(body);
@@ -110,14 +114,19 @@ const validateStaticProxyUrl = (value) => {
 
 const getStaticDispatcher = () => {
   const validated = validateStaticProxyUrl(getConfiguredStaticProxyUrl());
-  if (!validated) return { dispatcher: null, provider: null };
+  if (!validated) return { dispatcher: null, provider: null, endpointType: null };
 
   if (!staticDispatcher || staticDispatcherKey !== validated.url) {
     staticDispatcher = new ProxyAgent(validated.url);
     staticDispatcherKey = validated.url;
+    egressIpCache = null;
   }
 
-  return { dispatcher: staticDispatcher, provider: validated.provider };
+  return {
+    dispatcher: staticDispatcher,
+    provider: validated.provider,
+    endpointType: validated.endpointType
+  };
 };
 
 const safeSignatureEqual = (providedHex, expectedHex) => {
@@ -191,6 +200,47 @@ const forwardShopeeRequest = async (payload) => {
   }
 };
 
+const resolveStaticEgressIp = async () => {
+  const { dispatcher, provider, endpointType } = getStaticDispatcher();
+  if (!dispatcher) throw new Error('static_proxy_not_configured');
+
+  const now = Date.now();
+  if (egressIpCache && (now - egressIpCache.checkedAtMs) < EGRESS_IP_CACHE_TTL_MS) {
+    return { ...egressIpCache, cached: true };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), EGRESS_IP_TIMEOUT_MS);
+
+  try {
+    const response = await undiciFetch(EGRESS_IP_CHECK_URL, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      dispatcher,
+      redirect: 'error',
+      signal: controller.signal
+    });
+
+    if (!response.ok) throw new Error(`egress_ip_http_${response.status}`);
+
+    const payload = await response.json();
+    const ip = String(payload?.ip || '').trim();
+    if (net.isIP(ip) !== 4) throw new Error('egress_ip_not_ipv4');
+
+    egressIpCache = {
+      ip,
+      provider,
+      endpointType,
+      checkedAt: new Date(now).toISOString(),
+      checkedAtMs: now
+    };
+
+    return { ...egressIpCache, cached: false };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
@@ -221,8 +271,29 @@ const server = http.createServer(async (req, res) => {
       staticEgressProvider,
       staticEgressEndpointType,
       egressMode: staticEgressValid ? 'static-proxy' : 'direct',
-      version: '1.2.1'
+      version: '1.3.0'
     });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/egress-ip') {
+    try {
+      const result = await resolveStaticEgressIp();
+      return json(res, 200, {
+        ok: true,
+        viaStaticProxy: true,
+        provider: result.provider,
+        endpointType: result.endpointType,
+        ip: result.ip,
+        checkedAt: result.checkedAt,
+        cached: result.cached
+      });
+    } catch (error) {
+      const reason = error?.name === 'AbortError' ? 'egress_ip_timeout' : (error?.message || 'egress_ip_check_failed');
+      return json(res, reason === 'egress_ip_timeout' ? 504 : 502, {
+        ok: false,
+        error: reason
+      });
+    }
   }
 
   if (req.method !== 'POST' || url.pathname !== '/v1/forward') {
@@ -262,7 +333,7 @@ const server = http.createServer(async (req, res) => {
       'content-type': contentType,
       'cache-control': 'no-store, max-age=0',
       'x-content-type-options': 'nosniff',
-      'x-arstore-egress-relay': 'v1.2.1'
+      'x-arstore-egress-relay': 'v1.3.0'
     });
     return res.end(body);
   } catch (error) {
