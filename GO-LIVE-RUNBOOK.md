@@ -6,7 +6,7 @@ This runbook is the controlled path from the current sandbox-tested AR STORE das
 
 ## Non-negotiable rules
 
-- Do not paste `SHOPEE_PARTNER_KEY`, `SESSION_SECRET`, `SELLER_PASSWORD`, access tokens, or refresh tokens into chat, issues, commits, logs, screenshots, or source files.
+- Do not paste `SHOPEE_PARTNER_KEY`, `SESSION_SECRET`, `SELLER_PASSWORD`, `SHOPEE_REVIEWER_PASSWORD`, access tokens, or refresh tokens into chat, issues, commits, logs, screenshots, or source files.
 - Do not use Shopee API Test Tool → Get Access Token while the dashboard owns the seller authorization flow. That can replace/invalidate the token pair used by the dashboard.
 - Do not change production credentials merely because CI is green. CI proves code/config structure, not Shopee application approval.
 - Keep the homepage/dashboard freeze intact. Only critical fixes or the controlled credential/environment cutover are allowed before Go-Live validation completes.
@@ -35,6 +35,28 @@ Record only non-secret confirmation in the deployment notes:
 - Redirect/callback URL: approved for the deployed AR STORE Worker origin
 
 If any item is not confirmed, stay on sandbox.
+
+## Gate 1A — Shopee reviewer account for submission testing
+
+Before submitting the Go-Live form, configure a dedicated reviewer login instead of sharing the owner account.
+
+Cloudflare configuration:
+
+- `SHOPEE_REVIEWER_USERNAME` — normal environment variable. Recommended value: `shopee_reviewer`.
+- `SHOPEE_REVIEWER_PASSWORD` — Cloudflare Secret. Generate a strong one-time reviewer password and keep it out of GitHub/chat.
+- Keep `SELLER_USERNAME`, `SELLER_PASSWORD`, and `SESSION_SECRET` unchanged.
+
+Behavior:
+
+- Reviewer login uses the normal `/seller-login/` page.
+- Reviewer session is signed with the existing `SESSION_SECRET` and remains compatible with private dashboard access.
+- `/api/auth/session` reports role `reviewer` and `readOnly: true`.
+- State-changing API requests are denied server-side for reviewer sessions.
+- Reviewer cannot start/complete Shopee authorization flow.
+- Reviewer can inspect live/read-only dashboard data and log out normally.
+- Dashboard shows a `Shopee Review Mode — Read-only access` indicator.
+
+For the Shopee Go-Live form, provide the dedicated reviewer username/password directly in Shopee's form. Do not paste those credentials into repository files or chat.
 
 ## Gate 2 — Confirm endpoint/environment configuration
 
