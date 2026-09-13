@@ -1,4 +1,5 @@
 import baseWorker from './worker-v3-11.js';
+import { shopeeFetch } from './shopee-egress.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -108,7 +109,7 @@ const buildShopEndpoint = async (path, token, env) => {
 const shopInfoProbe = async (token, env) => {
   try {
     const endpoint = await buildShopEndpoint('/api/v2/shop/get_shop_info', token, env);
-    const response = await fetch(endpoint.toString(), { headers: { accept: 'application/json' } });
+    const response = await shopeeFetch(env, endpoint.toString(), { headers: { accept: 'application/json' } });
     const text = await response.text();
     let data = null;
     try { data = JSON.parse(text); } catch (_) {}
@@ -130,7 +131,7 @@ const refreshShopeeToken = async (token, env) => {
   try {
     const path = '/api/v2/auth/access_token/get';
     const endpoint = await buildPublicEndpoint(path, env);
-    const response = await fetch(endpoint.toString(), {
+    const response = await shopeeFetch(env, endpoint.toString(), {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
