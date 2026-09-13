@@ -1,0 +1,16 @@
+/* AR STORE — Homepage Horizontal Overflow Guard V1
+   Root-level containment prevents tiny motion offsets from creating a scrollable
+   x-axis while preserving intentional inner marquee/slider scrolling. */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@supports (overflow: clip) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+}
