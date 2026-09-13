@@ -9,8 +9,8 @@ const UPSTREAM_TIMEOUT_MS = 20_000;
 const ALLOWED_METHODS = new Set(['GET', 'POST']);
 const FORWARDED_HEADERS = new Set(['accept', 'content-type']);
 
-let nobleDispatcher = null;
-let nobleDispatcherKey = null;
+let staticDispatcher = null;
+let staticDispatcherKey = null;
 
 const json = (res, status, body) => {
   const payload = JSON.stringify(body);
@@ -54,36 +54,52 @@ const isShopeeHostAllowed = (hostname) => {
   return host === 'shopeemobile.com' || host.endsWith('.shopeemobile.com');
 };
 
-const validateNobleProxyUrl = (value) => {
+const staticProxyProvider = (hostname) => {
+  const host = String(hostname || '').toLowerCase();
+  if (host === 'noble-ip.com' || host.endsWith('.noble-ip.com')) return 'noble';
+  if (host === 'node4.io' || host.endsWith('.node4.io')) return 'node4';
+  return null;
+};
+
+const getConfiguredStaticProxyUrl = () => String(
+  process.env.STATIC_PROXY_URL || process.env.NOBLE_PROXY_URL || ''
+).trim();
+
+const validateStaticProxyUrl = (value) => {
   if (!value) return null;
   let proxy;
   try {
     proxy = new URL(String(value));
   } catch {
-    throw new Error('noble_proxy_url_invalid');
+    throw new Error('static_proxy_url_invalid');
   }
 
-  if (proxy.protocol !== 'https:') throw new Error('noble_proxy_protocol_invalid');
-  const host = proxy.hostname.toLowerCase();
-  if (!(host === 'noble-ip.com' || host.endsWith('.noble-ip.com'))) {
-    throw new Error('noble_proxy_host_invalid');
+  if (!['http:', 'https:'].includes(proxy.protocol)) {
+    throw new Error('static_proxy_protocol_invalid');
   }
-  if (!proxy.username || !proxy.password) throw new Error('noble_proxy_credentials_missing');
-  if (proxy.port && proxy.port !== '3129') throw new Error('noble_proxy_port_invalid');
 
-  return proxy.toString();
+  const provider = staticProxyProvider(proxy.hostname);
+  if (!provider) throw new Error('static_proxy_host_invalid');
+  if (!proxy.username || !proxy.password) throw new Error('static_proxy_credentials_missing');
+
+  const port = proxy.port ? Number(proxy.port) : null;
+  if (port && (!Number.isInteger(port) || port < 1 || port > 65535)) {
+    throw new Error('static_proxy_port_invalid');
+  }
+
+  return { url: proxy.toString(), provider };
 };
 
-const getNobleDispatcher = () => {
-  const proxyUrl = validateNobleProxyUrl(process.env.NOBLE_PROXY_URL || '');
-  if (!proxyUrl) return null;
+const getStaticDispatcher = () => {
+  const validated = validateStaticProxyUrl(getConfiguredStaticProxyUrl());
+  if (!validated) return { dispatcher: null, provider: null };
 
-  if (!nobleDispatcher || nobleDispatcherKey !== proxyUrl) {
-    nobleDispatcher = new ProxyAgent(proxyUrl);
-    nobleDispatcherKey = proxyUrl;
+  if (!staticDispatcher || staticDispatcherKey !== validated.url) {
+    staticDispatcher = new ProxyAgent(validated.url);
+    staticDispatcherKey = validated.url;
   }
 
-  return nobleDispatcher;
+  return { dispatcher: staticDispatcher, provider: validated.provider };
 };
 
 const safeSignatureEqual = (providedHex, expectedHex) => {
@@ -138,7 +154,7 @@ const forwardShopeeRequest = async (payload) => {
 
   const headers = sanitizeForwardHeaders(payload?.headers);
   const body = method === 'GET' ? undefined : String(payload?.body ?? '');
-  const dispatcher = getNobleDispatcher();
+  const { dispatcher } = getStaticDispatcher();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
@@ -161,13 +177,18 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
   if (req.method === 'GET' && url.pathname === '/health') {
-    let staticEgressConfigured = false;
+    const configuredUrl = getConfiguredStaticProxyUrl();
+    let staticEgressConfigured = Boolean(configuredUrl);
     let staticEgressValid = false;
+    let staticEgressProvider = null;
+
     try {
-      staticEgressConfigured = Boolean(process.env.NOBLE_PROXY_URL);
-      staticEgressValid = staticEgressConfigured ? Boolean(validateNobleProxyUrl(process.env.NOBLE_PROXY_URL)) : false;
+      const validated = staticEgressConfigured ? validateStaticProxyUrl(configuredUrl) : null;
+      staticEgressValid = Boolean(validated);
+      staticEgressProvider = validated?.provider || null;
     } catch {
       staticEgressValid = false;
+      staticEgressProvider = null;
     }
 
     return json(res, 200, {
@@ -176,8 +197,9 @@ const server = http.createServer(async (req, res) => {
       configured: Boolean(process.env.EGRESS_SHARED_SECRET),
       staticEgressConfigured,
       staticEgressValid,
-      egressMode: staticEgressValid ? 'noble-static-proxy' : 'direct',
-      version: '1.1.0'
+      staticEgressProvider,
+      egressMode: staticEgressValid ? 'static-proxy' : 'direct',
+      version: '1.2.0'
     });
   }
 
@@ -218,7 +240,7 @@ const server = http.createServer(async (req, res) => {
       'content-type': contentType,
       'cache-control': 'no-store, max-age=0',
       'x-content-type-options': 'nosniff',
-      'x-arstore-egress-relay': 'v1.1'
+      'x-arstore-egress-relay': 'v1.2'
     });
     return res.end(body);
   } catch (error) {
