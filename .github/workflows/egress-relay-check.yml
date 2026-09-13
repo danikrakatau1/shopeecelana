@@ -1,0 +1,48 @@
+name: Static Egress Relay Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'egress-relay/**'
+      - '.github/workflows/egress-relay-check.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'egress-relay/**'
+      - '.github/workflows/egress-relay-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  relay-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: egress-relay
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: node --check server.mjs
+      - name: Health smoke
+        env:
+          EGRESS_SHARED_SECRET: ci-only-not-a-production-secret
+          PORT: '3456'
+        run: |
+          node server.mjs > /tmp/arstore-egress-relay.log 2>&1 &
+          pid=$!
+          trap 'kill $pid || true' EXIT
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:3456/health | grep -q '"ok":true'; then
+              exit 0
+            fi
+            sleep 0.25
+          done
+          cat /tmp/arstore-egress-relay.log
+          exit 1
