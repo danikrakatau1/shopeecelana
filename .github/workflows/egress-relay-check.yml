@@ -28,6 +28,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install dependencies
+        run: npm install --omit=dev --no-audit --no-fund
       - name: Syntax check
         run: node --check server.mjs
       - name: Health smoke
