@@ -1,0 +1,40 @@
+name: Homepage Cross-Device QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'styles.css'
+      - 'hero-fix.css'
+      - 'app.js'
+      - 'homepage-motion-v1.css'
+      - 'homepage-motion-v1.js'
+      - 'src/worker-v3-20.js'
+      - 'wrangler.jsonc'
+      - 'scripts/homepage-cross-device-qa.mjs'
+      - '.github/workflows/homepage-cross-device-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-cross-device:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ARSTORE_BASE_URL: https://shopeecelana.celanaarstore.workers.dev/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Run live cross-device QA
+        run: node scripts/homepage-cross-device-qa.mjs
