@@ -1,11 +1,14 @@
 {
   "name": "arstore-shopee-egress-relay",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
     "check": "node --check server.mjs"
+  },
+  "dependencies": {
+    "undici": "^7.16.0"
   },
   "engines": {
     "node": ">=22"
