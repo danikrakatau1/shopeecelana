@@ -52,6 +52,10 @@ check('Reviewer dashboard CSS is injected', prod.includes('./reviewer-readonly-v
 check('Reviewer dashboard JS is injected', prod.includes('./reviewer-readonly-v1.js'));
 check('Reviewer UI confirms read-only mode from server session', reviewerUi.includes("session?.user?.role !== 'reviewer'") && reviewerUi.includes('session?.readOnly'));
 check('Reviewer UI displays a read-only review badge', reviewerUi.includes('Shopee Review Mode') && reviewerCss.includes('.reviewer-readonly-pill'));
+check('Reviewer identity replaces owner label', reviewerUi.includes("'Shopee Reviewer'") && reviewerUi.includes("'Read-only Reviewer'"));
+check('Reviewer identity replaces owner avatar initials', reviewerUi.includes("profile.firstElementChild, 'SR'"));
+check('Reviewer sidebar role is explicit', reviewerUi.includes("'.seller-chip'), 'REVIEWER'"));
+check('Reviewer topbar context is explicit', reviewerUi.includes("'AR STORE / REVIEW ACCESS'"));
 
 const obviousSecretPatterns = [
   /SHOPEE_PARTNER_KEY\s*=\s*['"][^'"]{8,}['"]/,
