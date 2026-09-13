@@ -132,14 +132,35 @@ const shopInfoProbe = async (token, env) => {
     const text = await response.text();
     let data = null;
     try { data = JSON.parse(text); } catch (_) {}
+    const contentType = String(response.headers.get('content-type') || '').slice(0, 160);
+    const relayVersion = String(response.headers.get('x-arstore-egress-relay') || '').slice(0, 80) || null;
     return {
       ok: response.ok && !data?.error,
       status: response.status,
       data,
-      message: parseShopeeError(data, 'Shopee token probe failed')
+      message: parseShopeeError(data, 'Shopee token probe failed'),
+      diagnostic: {
+        stage: 'shopee_upstream_response',
+        upstreamStatus: response.status,
+        responseFormat: data ? 'json' : 'non-json',
+        contentType: contentType || null,
+        relayVersion
+      }
     };
   } catch (_) {
-    return { ok: false, status: 502, data: null, message: 'Shopee API unreachable' };
+    return {
+      ok: false,
+      status: 502,
+      data: null,
+      message: 'Shopee API unreachable',
+      diagnostic: {
+        stage: 'worker_to_relay_fetch_exception',
+        upstreamStatus: null,
+        responseFormat: null,
+        contentType: null,
+        relayVersion: null
+      }
+    };
   }
 };
 
@@ -262,7 +283,7 @@ const handleShopInfo = async (request, env) => {
 
   const result = await shopInfoProbe(fresh.token, env);
   if (!result.ok) {
-    return json({ error: 'shopee_api_error', message: result.message }, 502,
+    return json({ error: 'shopee_api_error', message: result.message, diagnostic: result.diagnostic || null }, 502,
       fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
   }
 
@@ -372,7 +393,11 @@ const handleTokenHealth = async (request, env) => {
   }
 
   if (!looksLikeTokenError(probe.message)) {
-    return json({ error: 'shopee_probe_failed', message: probe.message }, 502);
+    return json({
+      error: 'shopee_probe_failed',
+      message: probe.message,
+      diagnostic: probe.diagnostic || null
+    }, 502);
   }
 
   const refreshed = await refreshShopeeToken(token, env);
@@ -389,7 +414,8 @@ const handleTokenHealth = async (request, env) => {
     return json({
       error: 'shopee_reconnect_required',
       message: retry.message || 'Shopee rejected the refreshed token.',
-      reconnectRequired: true
+      reconnectRequired: true,
+      diagnostic: retry.diagnostic || null
     }, 401);
   }
 
