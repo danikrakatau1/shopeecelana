@@ -35,7 +35,8 @@ jobs:
       - name: Health smoke
         env:
           EGRESS_SHARED_SECRET: ci-only-not-a-production-secret
-          STATIC_PROXY_URL: http://user:pass@gw-free.node4.io:8080
+          STATIC_PROXY_URL: http://user:pass@203.0.113.10:4443
+          STATIC_PROXY_PROVIDER: node4
           PORT: '3456'
         run: |
           node server.mjs > /tmp/arstore-egress-relay.log 2>&1 &
@@ -45,7 +46,8 @@ jobs:
             health="$(curl -fsS http://127.0.0.1:3456/health || true)"
             if printf '%s' "$health" | grep -q '"ok":true' \
               && printf '%s' "$health" | grep -q '"staticEgressValid":true' \
-              && printf '%s' "$health" | grep -q '"staticEgressProvider":"node4"'; then
+              && printf '%s' "$health" | grep -q '"staticEgressProvider":"node4"' \
+              && printf '%s' "$health" | grep -q '"staticEgressEndpointType":"ip"'; then
               exit 0
             fi
             sleep 0.25
