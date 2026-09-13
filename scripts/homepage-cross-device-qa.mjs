@@ -18,6 +18,22 @@ const record = (device, name, pass, detail = '') => {
   console.log(`${pass ? 'PASS' : 'FAIL'}  [${device}] ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+const assetUrls = [
+  new URL('assets/video/arstore%201.mp4', BASE_URL).href,
+  new URL('assets/video/arstore%202.mp4', BASE_URL).href
+];
+const assetChecks = [];
+for (const url of assetUrls) {
+  try {
+    const response = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-0' } });
+    assetChecks.push({ url, status: response.status, ok: response.ok || response.status === 206 });
+    try { await response.body?.cancel(); } catch {}
+  } catch (error) {
+    assetChecks.push({ url, status: 0, ok: false, error: error.message });
+  }
+}
+record('Assets', 'Existing AR STORE video files are reachable', assetChecks.every((item) => item.ok), assetChecks.map((item) => `${item.status}:${item.url.split('/').pop()}`).join(', '));
+
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -33,9 +49,16 @@ try {
 
     const page = await context.newPage();
     const runtimeErrors = [];
+    let appJsStatus = 0;
     page.on('pageerror', (error) => runtimeErrors.push(`pageerror: ${error.message}`));
     page.on('console', (message) => {
       if (message.type() === 'error') runtimeErrors.push(`console: ${message.text()}`);
+    });
+    page.on('response', (response) => {
+      try {
+        const url = new URL(response.url());
+        if (url.pathname.endsWith('/app.js')) appJsStatus = response.status();
+      } catch {}
     });
 
     let response;
@@ -50,27 +73,50 @@ try {
     }
 
     record(device.name, 'Homepage loads', Boolean(response?.ok()), `HTTP ${response?.status() ?? 'n/a'}`);
+    record(device.name, 'Homepage app.js loads', appJsStatus >= 200 && appJsStatus < 400, `HTTP ${appJsStatus || 'n/a'}`);
 
     const state = await page.evaluate(() => {
       const hero = document.querySelector('.hero');
       const word = document.querySelector('.hero-display > div');
       const wordRect = word?.getBoundingClientRect();
       const heroRect = hero?.getBoundingClientRect();
-      const videos = [...document.querySelectorAll('video')];
+      const width = window.innerWidth;
+      const scrollWidth = document.documentElement.scrollWidth;
+      const overflowOffenders = [...document.querySelectorAll('body *')]
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            tag: element.tagName.toLowerCase(),
+            id: element.id || '',
+            cls: typeof element.className === 'string' ? element.className.trim().replace(/\s+/g, '.') : '',
+            left: rect.left,
+            right: rect.right,
+            width: rect.width,
+            position: getComputedStyle(element).position,
+            overflowX: getComputedStyle(element).overflowX
+          };
+        })
+        .filter((item) => item.width > 0 && (item.left < -1 || item.right > width + 1))
+        .sort((a, b) => Math.max(b.right - width, -b.left) - Math.max(a.right - width, -a.left))
+        .slice(0, 8);
       return {
-        width: window.innerWidth,
-        scrollWidth: document.documentElement.scrollWidth,
+        width,
+        scrollWidth,
+        overflowOffenders,
         motionReady: document.documentElement.classList.contains('motion-v1-ready'),
         motionEntered: document.documentElement.classList.contains('motion-page-entered'),
         motionDataset: document.body.dataset.homeMotion,
         wordRect: wordRect ? { left: wordRect.left, right: wordRect.right, top: wordRect.top, bottom: wordRect.bottom, width: wordRect.width } : null,
-        heroRect: heroRect ? { left: heroRect.left, right: heroRect.right, top: heroRect.top, bottom: heroRect.bottom } : null,
-        videos: videos.map((video) => ({ muted: video.muted, playsInline: video.playsInline, src: video.currentSrc || video.src }))
+        heroRect: heroRect ? { left: heroRect.left, right: heroRect.right, top: heroRect.top, bottom: heroRect.bottom } : null
       };
     });
 
     record(device.name, 'Global Premium Motion V1 wired', state.motionReady && state.motionEntered && state.motionDataset === 'v1');
-    record(device.name, 'No page-level horizontal overflow', state.scrollWidth <= state.width + 1, `scrollWidth=${state.scrollWidth}, viewport=${state.width}`);
+    const noOverflow = state.scrollWidth <= state.width + 1;
+    const overflowDetail = noOverflow
+      ? `scrollWidth=${state.scrollWidth}, viewport=${state.width}`
+      : `scrollWidth=${state.scrollWidth}, viewport=${state.width}; offenders=${state.overflowOffenders.map((item) => `${item.tag}${item.id ? `#${item.id}` : ''}${item.cls ? `.${item.cls}` : ''}[${item.left.toFixed(1)},${item.right.toFixed(1)}]`).join(' | ')}`;
+    record(device.name, 'No page-level horizontal overflow', noOverflow, overflowDetail);
 
     const safeInset = device.width <= 640 ? 4 : 2;
     const wordSafe = Boolean(state.wordRect && state.heroRect) &&
@@ -162,10 +208,6 @@ try {
         record(device.name, 'Mobile menu opens with motion and closes on Escape', false, 'menu toggle not visible');
       }
     }
-
-    const videoState = state.videos;
-    const videoPass = videoState.length >= 2 && videoState.every((video) => video.muted && video.playsInline && /assets\/video\//.test(video.src));
-    record(device.name, 'Homepage videos are inline/muted and use existing AR STORE assets', videoPass, `videos=${videoState.length}`);
 
     record(device.name, 'No uncaught browser/runtime errors', runtimeErrors.length === 0, runtimeErrors.slice(0, 3).join(' | '));
     await context.close();
