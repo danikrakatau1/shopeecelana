@@ -4,6 +4,7 @@ import net from 'node:net';
 import { ProxyAgent, fetch as undiciFetch } from 'undici';
 
 const PORT = Number(process.env.PORT || 3000);
+const RELAY_VERSION = '1.3.1';
 const MAX_BODY_BYTES = 1024 * 1024;
 const MAX_CLOCK_SKEW_MS = 90_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
@@ -18,12 +19,30 @@ let staticDispatcher = null;
 let staticDispatcherKey = null;
 let egressIpCache = null;
 
-const json = (res, status, body) => {
+const safeErrorDiagnostic = (error) => ({
+  name: String(error?.name || 'Error').slice(0, 80),
+  code: error?.code ? String(error.code).slice(0, 120) : null,
+  causeCode: error?.cause?.code ? String(error.cause.code).slice(0, 120) : null
+});
+
+const logEvent = (event, fields = {}) => {
+  console.log(JSON.stringify({
+    ts: new Date().toISOString(),
+    service: 'arstore-shopee-egress-relay',
+    version: RELAY_VERSION,
+    event,
+    ...fields
+  }));
+};
+
+const json = (res, status, body, extraHeaders = {}) => {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store, max-age=0',
-    'x-content-type-options': 'nosniff'
+    'x-content-type-options': 'nosniff',
+    'x-arstore-egress-relay': RELAY_VERSION,
+    ...extraHeaders
   });
   res.end(payload);
 };
@@ -169,7 +188,7 @@ const sanitizeForwardHeaders = (headers = {}) => {
   return output;
 };
 
-const forwardShopeeRequest = async (payload) => {
+const forwardShopeeRequest = async (payload, requestId) => {
   const target = new URL(String(payload?.url || ''));
   if (target.protocol !== 'https:') throw new Error('target_protocol_not_allowed');
   if (!isShopeeHostAllowed(target.hostname)) throw new Error('target_host_not_allowed');
@@ -181,13 +200,23 @@ const forwardShopeeRequest = async (payload) => {
 
   const headers = sanitizeForwardHeaders(payload?.headers);
   const body = method === 'GET' ? undefined : String(payload?.body ?? '');
-  const { dispatcher } = getStaticDispatcher();
+  const { dispatcher, provider, endpointType } = getStaticDispatcher();
+
+  logEvent('forward_upstream_start', {
+    requestId,
+    method,
+    targetHost: target.hostname,
+    targetPath: target.pathname,
+    proxyConfigured: Boolean(dispatcher),
+    proxyProvider: provider,
+    proxyEndpointType: endpointType
+  });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
   try {
-    return await undiciFetch(target, {
+    const response = await undiciFetch(target, {
       method,
       headers,
       body,
@@ -195,6 +224,19 @@ const forwardShopeeRequest = async (payload) => {
       signal: controller.signal,
       ...(dispatcher ? { dispatcher } : {})
     });
+
+    logEvent('forward_upstream_response', {
+      requestId,
+      status: response.status,
+      contentType: String(response.headers.get('content-type') || '').slice(0, 120)
+    });
+    return response;
+  } catch (error) {
+    logEvent('forward_upstream_error', {
+      requestId,
+      ...safeErrorDiagnostic(error)
+    });
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
@@ -271,7 +313,7 @@ const server = http.createServer(async (req, res) => {
       staticEgressProvider,
       staticEgressEndpointType,
       egressMode: staticEgressValid ? 'static-proxy' : 'direct',
-      version: '1.3.0'
+      version: RELAY_VERSION
     });
   }
 
@@ -291,7 +333,8 @@ const server = http.createServer(async (req, res) => {
       const reason = error?.name === 'AbortError' ? 'egress_ip_timeout' : (error?.message || 'egress_ip_check_failed');
       return json(res, reason === 'egress_ip_timeout' ? 504 : 502, {
         ok: false,
-        error: reason
+        error: reason,
+        diagnostic: safeErrorDiagnostic(error)
       });
     }
   }
@@ -300,13 +343,18 @@ const server = http.createServer(async (req, res) => {
     return json(res, 404, { error: 'not_found' });
   }
 
+  const requestId = crypto.randomUUID().slice(0, 12);
+  logEvent('forward_received', { requestId });
+
   let rawBody;
   try {
     rawBody = await readBody(req);
   } catch (error) {
+    logEvent('forward_body_error', { requestId, ...safeErrorDiagnostic(error) });
     return json(res, error?.message === 'payload_too_large' ? 413 : 400, {
-      error: error?.message || 'invalid_request'
-    });
+      error: error?.message || 'invalid_request',
+      requestId
+    }, { 'x-arstore-egress-request-id': requestId });
   }
 
   const verified = verifyRelaySignature(
@@ -315,17 +363,25 @@ const server = http.createServer(async (req, res) => {
     req.headers['x-arstore-egress-signature']
   );
 
-  if (!verified.ok) return json(res, 401, { error: verified.reason });
+  if (!verified.ok) {
+    logEvent('forward_auth_rejected', { requestId, reason: verified.reason });
+    return json(res, 401, { error: verified.reason, requestId }, {
+      'x-arstore-egress-request-id': requestId
+    });
+  }
 
   let payload;
   try {
     payload = JSON.parse(rawBody.toString('utf8'));
   } catch {
-    return json(res, 400, { error: 'invalid_json' });
+    logEvent('forward_json_rejected', { requestId });
+    return json(res, 400, { error: 'invalid_json', requestId }, {
+      'x-arstore-egress-request-id': requestId
+    });
   }
 
   try {
-    const upstream = await forwardShopeeRequest(payload);
+    const upstream = await forwardShopeeRequest(payload, requestId);
     const body = Buffer.from(await upstream.arrayBuffer());
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
 
@@ -333,15 +389,25 @@ const server = http.createServer(async (req, res) => {
       'content-type': contentType,
       'cache-control': 'no-store, max-age=0',
       'x-content-type-options': 'nosniff',
-      'x-arstore-egress-relay': 'v1.3.0'
+      'x-arstore-egress-relay': RELAY_VERSION,
+      'x-arstore-egress-request-id': requestId
     });
     return res.end(body);
   } catch (error) {
-    const reason = error?.name === 'AbortError' ? 'upstream_timeout' : (error?.message || 'upstream_failed');
-    return json(res, reason === 'upstream_timeout' ? 504 : 502, { error: reason });
+    const reason = error?.name === 'AbortError' ? 'upstream_timeout' : 'upstream_fetch_failed';
+    const diagnostic = safeErrorDiagnostic(error);
+    logEvent('forward_failed', { requestId, reason, ...diagnostic });
+    return json(res, reason === 'upstream_timeout' ? 504 : 502, {
+      error: reason,
+      stage: 'relay_to_upstream',
+      requestId,
+      diagnostic
+    }, {
+      'x-arstore-egress-request-id': requestId
+    });
   }
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`AR STORE Shopee egress relay listening on :${PORT}`);
+  logEvent('relay_listening', { port: PORT });
 });
