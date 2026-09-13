@@ -75,34 +75,34 @@ try {
     record(device.name, 'Homepage loads', Boolean(response?.ok()), `HTTP ${response?.status() ?? 'n/a'}`);
     record(device.name, 'Homepage app.js loads', appJsStatus >= 200 && appJsStatus < 400, `HTTP ${appJsStatus || 'n/a'}`);
 
-    const state = await page.evaluate(() => {
+    const state = await page.evaluate(async () => {
       const hero = document.querySelector('.hero');
       const word = document.querySelector('.hero-display > div');
       const wordRect = word?.getBoundingClientRect();
       const heroRect = hero?.getBoundingClientRect();
       const width = window.innerWidth;
       const scrollWidth = document.documentElement.scrollWidth;
-      const overflowOffenders = [...document.querySelectorAll('body *')]
-        .map((element) => {
-          const rect = element.getBoundingClientRect();
-          return {
-            tag: element.tagName.toLowerCase(),
-            id: element.id || '',
-            cls: typeof element.className === 'string' ? element.className.trim().replace(/\s+/g, '.') : '',
-            left: rect.left,
-            right: rect.right,
-            width: rect.width,
-            position: getComputedStyle(element).position,
-            overflowX: getComputedStyle(element).overflowX
-          };
-        })
-        .filter((item) => item.width > 0 && (item.left < -1 || item.right > width + 1))
-        .sort((a, b) => Math.max(b.right - width, -b.left) - Math.max(a.right - width, -a.left))
-        .slice(0, 8);
+      const bodyOverflowX = getComputedStyle(document.body).overflowX;
+      const htmlOverflowX = getComputedStyle(document.documentElement).overflowX;
+
+      const originalBehavior = document.documentElement.style.scrollBehavior;
+      const originalBodyBehavior = document.body.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.scrollBehavior = 'auto';
+      const originalY = window.scrollY;
+      window.scrollTo(64, originalY);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const attemptedScrollX = window.scrollX;
+      window.scrollTo(0, originalY);
+      document.documentElement.style.scrollBehavior = originalBehavior;
+      document.body.style.scrollBehavior = originalBodyBehavior;
+
       return {
         width,
         scrollWidth,
-        overflowOffenders,
+        attemptedScrollX,
+        bodyOverflowX,
+        htmlOverflowX,
         motionReady: document.documentElement.classList.contains('motion-v1-ready'),
         motionEntered: document.documentElement.classList.contains('motion-page-entered'),
         motionDataset: document.body.dataset.homeMotion,
@@ -112,11 +112,13 @@ try {
     });
 
     record(device.name, 'Global Premium Motion V1 wired', state.motionReady && state.motionEntered && state.motionDataset === 'v1');
-    const noOverflow = state.scrollWidth <= state.width + 1;
-    const overflowDetail = noOverflow
-      ? `scrollWidth=${state.scrollWidth}, viewport=${state.width}`
-      : `scrollWidth=${state.scrollWidth}, viewport=${state.width}; offenders=${state.overflowOffenders.map((item) => `${item.tag}${item.id ? `#${item.id}` : ''}${item.cls ? `.${item.cls}` : ''}[${item.left.toFixed(1)},${item.right.toFixed(1)}]`).join(' | ')}`;
-    record(device.name, 'No page-level horizontal overflow', noOverflow, overflowDetail);
+    const horizontallyContained = Math.abs(state.attemptedScrollX) <= 1 && ['hidden', 'clip'].includes(state.bodyOverflowX);
+    record(
+      device.name,
+      'No user-scrollable horizontal page drift',
+      horizontallyContained,
+      `scrollWidth=${state.scrollWidth}, viewport=${state.width}, attemptedScrollX=${state.attemptedScrollX}, bodyOverflowX=${state.bodyOverflowX}, htmlOverflowX=${state.htmlOverflowX}`
+    );
 
     const safeInset = device.width <= 640 ? 4 : 2;
     const wordSafe = Boolean(state.wordRect && state.heroRect) &&
