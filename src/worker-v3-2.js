@@ -1,12 +1,24 @@
 import baseWorker from './worker-v3.js';
 import { shopeeFetch } from './shopee-egress.js';
+import { getFreshShopeeToken } from './shopee-token.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const SHOPEE_COOKIE = 'arstore_shopee';
 const SHOPEE_DEFAULT_BASE = 'https://partner.shopeemobile.com';
 const MODEL_PATH = '/api/v2/product/get_model_list';
+const ITEM_LIST_PATH = '/api/v2/product/get_item_list';
+const ITEM_BASE_INFO_PATH = '/api/v2/product/get_item_base_info';
 const VARIANT_LOW_STOCK_THRESHOLD = 10;
+
+const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
+  status,
+  headers: {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store, max-age=0',
+    ...headers
+  }
+});
 
 const parseCookies = (request) => {
   const header = request.headers.get('cookie') || '';
@@ -79,23 +91,11 @@ const shopGet = async (path, token, env, params = {}) => {
     const response = await shopeeFetch(env, endpoint.toString(), { headers: { accept: 'application/json' } });
     const text = await response.text();
     let data;
-    try { data = JSON.parse(text); } catch (_) { return { ok: false, message: 'Shopee returned a non-JSON response' }; }
-    return { ok: response.ok && !data?.error, data, message: parseShopeeError(data) };
+    try { data = JSON.parse(text); } catch (_) { return { ok: false, status: response.status, message: 'Shopee returned a non-JSON response' }; }
+    return { ok: response.ok && !data?.error, status: response.status, data, message: parseShopeeError(data) };
   } catch (_) {
-    return { ok: false, message: 'Shopee API unreachable' };
+    return { ok: false, status: 502, message: 'Shopee API unreachable' };
   }
-};
-
-const getEncryptedTokenFromSetCookie = (headers) => {
-  const raw = headers.get('set-cookie') || '';
-  const match = raw.match(/(?:^|,\s*)arstore_shopee=([^;]+)/i);
-  return match?.[1] || null;
-};
-
-const getTokenForEnrichment = async (request, baseResponse, env) => {
-  const refreshedEncrypted = getEncryptedTokenFromSetCookie(baseResponse.headers);
-  const requestEncrypted = parseCookies(request)[SHOPEE_COOKIE];
-  return decryptObject(refreshedEncrypted || requestEncrypted, env.SESSION_SECRET);
 };
 
 const numberOrZero = (value) => {
@@ -231,27 +231,55 @@ const mapWithConcurrency = async (items, limit, mapper) => {
   return results;
 };
 
-const enrichProductResponse = async (request, env) => {
-  const baseResponse = await baseWorker.fetch(request.clone(), env);
-  if (!baseResponse.ok) return baseResponse;
-
-  let payload;
-  try {
-    payload = await baseResponse.clone().json();
-  } catch (_) {
-    return baseResponse;
+const handleProducts = async (request, env, url) => {
+  const fresh = await getFreshShopeeToken(request, env);
+  if (!fresh.ok) {
+    return json({ error: fresh.error || 'shopee_not_connected', message: fresh.message || null }, fresh.error === 'shopee_not_connected' ? 401 : 503);
   }
 
-  if (!payload?.ok || !Array.isArray(payload.products) || !payload.products.some((product) => product?.hasModel)) {
-    return baseResponse;
+  const offset = Math.max(0, Number(url.searchParams.get('offset') || 0) || 0);
+  const pageSize = Math.min(50, Math.max(1, Number(url.searchParams.get('page_size') || 50) || 50));
+  const itemStatus = String(url.searchParams.get('item_status') || 'NORMAL').trim() || 'NORMAL';
+
+  const listResult = await shopGet(ITEM_LIST_PATH, fresh.token, env, {
+    offset,
+    page_size: pageSize,
+    item_status: itemStatus
+  });
+  if (!listResult.ok) {
+    return json({ error: 'shopee_product_list_error', message: listResult.message }, 502, fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
   }
 
-  const token = await getTokenForEnrichment(request, baseResponse, env);
-  if (!token?.access_token || !token?.shop_id || !env.SHOPEE_PARTNER_ID || !env.SHOPEE_PARTNER_KEY) {
-    return baseResponse;
+  const listResponse = listResult.data?.response || {};
+  const listItems = Array.isArray(listResponse.item) ? listResponse.item : Array.isArray(listResponse.item_list) ? listResponse.item_list : [];
+  const itemIds = listItems.map((item) => item?.item_id).filter(Boolean);
+  let details = [];
+
+  if (itemIds.length) {
+    const detailResult = await shopGet(ITEM_BASE_INFO_PATH, fresh.token, env, { item_id_list: itemIds.join(',') });
+    if (!detailResult.ok) {
+      return json({ error: 'shopee_product_info_error', message: detailResult.message }, 502, fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
+    }
+    const detailResponse = detailResult.data?.response || {};
+    details = Array.isArray(detailResponse.item_list) ? detailResponse.item_list : Array.isArray(detailResponse.item) ? detailResponse.item : [];
   }
 
-  const products = await mapWithConcurrency(payload.products, 5, (product) => enrichOneProduct(product, token, env));
+  const byId = new Map(details.map((item) => [String(item?.item_id), item]));
+  const baseProducts = listItems.map((summary) => {
+    const detail = byId.get(String(summary?.item_id)) || summary;
+    return {
+      itemId: String(detail?.item_id || summary?.item_id || ''),
+      name: detail?.item_name || detail?.name || `Shopee Item ${summary?.item_id || ''}`,
+      sku: detail?.item_sku || detail?.seller_sku || '—',
+      status: detail?.item_status || summary?.item_status || itemStatus,
+      price: normalizePrice(detail),
+      stock: normalizeStock(detail),
+      hasModel: Boolean(detail?.has_model),
+      updateTime: Number(summary?.update_time || detail?.update_time || 0) || null
+    };
+  });
+
+  const products = await mapWithConcurrency(baseProducts, 5, (product) => enrichOneProduct(product, fresh.token, env));
   const variantCount = products.reduce((sum, product) => sum + numberOrZero(product.variantCount), 0);
   const lowStockVariantCount = products.reduce((sum, product) => sum + numberOrZero(product.lowStockVariantCount), 0);
   const lowStockProductCount = products.filter((product) =>
@@ -260,28 +288,27 @@ const enrichProductResponse = async (request, env) => {
       : numberOrZero(product.stock) <= VARIANT_LOW_STOCK_THRESHOLD
   ).length;
 
-  const headers = new Headers(baseResponse.headers);
-  headers.set('content-type', 'application/json; charset=utf-8');
-  headers.set('cache-control', 'no-store, max-age=0');
-
-  return new Response(JSON.stringify({
-    ...payload,
+  return json({
+    ok: true,
+    source: 'shopee',
+    shopId: String(fresh.token.shop_id),
+    tokenRefreshed: fresh.refreshed,
+    totalCount: Number(listResponse.total_count ?? products.length) || products.length,
+    hasNextPage: Boolean(listResponse.has_next_page),
+    nextOffset: Number(listResponse.next_offset ?? listResponse.next ?? offset + products.length) || null,
     products,
     variantEnrichment: true,
     variantCount,
     lowStockVariantCount,
     lowStockProductCount
-  }), {
-    status: baseResponse.status,
-    headers
-  });
+  }, 200, fresh.setCookie ? { 'set-cookie': fresh.setCookie } : {});
 };
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/shopee/products' && request.method === 'GET') {
-      return enrichProductResponse(request, env);
+      return handleProducts(request, env, url);
     }
     return baseWorker.fetch(request, env);
   }
