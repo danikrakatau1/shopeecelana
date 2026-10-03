@@ -161,13 +161,15 @@ const fetchTodayOrderSns = async (token, env, h) => {
   return { ok: true, orderSns: orderSns.slice(0, MAX_BRIDGE_ORDERS) };
 };
 
-const fetchOrderDetails = async (token, env, h, orderSns) => {
+const fetchOrderDetails = async (token, env, h, orderSns, extraFields = '') => {
   const details = [];
+  const baseFields = 'total_amount,currency,order_status,create_time';
+  const fields = extraFields ? `${baseFields},${extraFields}` : baseFields;
   for (let i = 0; i < orderSns.length; i += 50) {
     const chunk = orderSns.slice(i, i + 50);
     const result = await shopGet('/api/v2/order/get_order_detail', token, env, h, {
       order_sn_list: chunk.join(','),
-      response_optional_fields: 'total_amount,currency,order_status,create_time'
+      response_optional_fields: fields
     });
     if (!result.ok) return { ok: false, message: result.message };
     for (const order of asArray(result.data?.response?.order_list)) details.push(order);
@@ -338,7 +340,8 @@ export const handleBridgeQuery = async (request, env, h) => {
     shop_info: opShopInfo,
     orders_today: opOrdersToday,
     finance_today: opFinanceToday,
-    ads_today: opAdsToday
+    ads_today: opAdsToday,
+    profit_today: opProfitToday
   };
   if (!OPS[op]) {
     return json({ error: 'unknown_op', allowed: Object.keys(OPS) }, 400);
@@ -360,4 +363,277 @@ export const handleBridgeQuery = async (request, env, h) => {
   }
 
   return OPS[op](tokenResult.token, env, h);
+};
+
+// ---------------------------------------------------------------------------
+// Phase 2 — server-side HPP storage (Cloudflare KV).
+//
+// The dashboard's Profit Intelligence panel keeps HPP in browser localStorage
+// (`arstore_profit_hpp_v1`), which a server cron cannot read. These helpers
+// store HPP per item in the same SHOPEE_KV namespace so the daily recap can
+// compute real profit.
+//
+// Key:   hpp:<shop_id>:<item_id>     Value: HPP in IDR (integer, as string)
+// ---------------------------------------------------------------------------
+
+const HPP_KEY_PREFIX = 'hpp:';
+const hppKey = (shopId, itemId) => `${HPP_KEY_PREFIX}${String(shopId)}:${String(itemId)}`;
+const cleanItemId = (value) => String(value || '').trim();
+
+// Returns a non-negative integer rupiah value, or null when invalid.
+const validHppNumber = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+};
+
+const getHpp = async (env, shopId, itemId) => {
+  const id = cleanItemId(itemId);
+  if (!env.SHOPEE_KV || !id) return null;
+  try {
+    const raw = await env.SHOPEE_KV.get(hppKey(shopId, id));
+    if (raw == null) return null;
+    return validHppNumber(raw);
+  } catch (_) {
+    return null;
+  }
+};
+
+// value: number >= 0 to set; null/undefined (or 0) deletes the entry.
+const setHpp = async (env, shopId, itemId, value) => {
+  const id = cleanItemId(itemId);
+  if (!id) return { ok: false, error: 'invalid_item_id' };
+  if (!env.SHOPEE_KV) return { ok: false, error: 'bridge_not_configured' };
+  try {
+    if (value === null || value === undefined) {
+      await env.SHOPEE_KV.delete(hppKey(shopId, id));
+      return { ok: true, deleted: true };
+    }
+    const n = validHppNumber(value);
+    if (n === null) return { ok: false, error: 'invalid_hpp' };
+    if (n === 0) {
+      await env.SHOPEE_KV.delete(hppKey(shopId, id));
+      return { ok: true, deleted: true };
+    }
+    await env.SHOPEE_KV.put(hppKey(shopId, id), String(n));
+    return { ok: true, hpp: n };
+  } catch (_) {
+    return { ok: false, error: 'kv_write_failed' };
+  }
+};
+
+const listHpp = async (env, shopId) => {
+  if (!env.SHOPEE_KV) return null;
+  const prefix = `${HPP_KEY_PREFIX}${String(shopId)}:`;
+  const out = {};
+  try {
+    let cursor;
+    do {
+      const page = await env.SHOPEE_KV.list({ prefix, cursor });
+      await Promise.all(
+        (page.keys || []).map(async (k) => {
+          const itemId = k.name.slice(prefix.length);
+          const n = validHppNumber(await env.SHOPEE_KV.get(k.name));
+          if (itemId && n !== null) out[itemId] = n;
+        })
+      );
+      cursor = page.list_complete ? undefined : page.cursor;
+    } while (cursor);
+    return out;
+  } catch (_) {
+    return null;
+  }
+};
+
+// Dual auth for the HPP endpoints: EITHER the bridge secret (Muse/cron)
+// OR a valid seller session (dashboard browser). One of them is enough.
+const bridgeAuthOk = async (request, env, h) => {
+  if (
+    env.MUSE_BRIDGE_SECRET &&
+    constantTimeEqual(request.headers.get('x-bridge-secret') || '', env.MUSE_BRIDGE_SECRET)
+  ) {
+    return true;
+  }
+  if (typeof h.sessionIsValid === 'function') {
+    try {
+      if (await h.sessionIsValid(request, env)) return true;
+    } catch (_) {}
+  }
+  return false;
+};
+
+// GET  /api/bridge/hpp  -> { ok, shop_id, count, hpp: { item_id: n } }
+// POST /api/bridge/hpp  -> body { item_id, hpp } (hpp null/0 deletes)
+export const handleBridgeHpp = async (request, env, h) => {
+  if (!env.SHOPEE_KV) return json({ error: 'bridge_not_configured' }, 503);
+  if (!(await bridgeAuthOk(request, env, h))) {
+    return json({ error: 'unauthorized' }, 401);
+  }
+  const tokenResult = await getBridgeToken(env, h);
+  if (!tokenResult.ok) {
+    return json(
+      { error: tokenResult.error, message: 'No Shopee token in KV yet.' },
+      tokenResult.error === 'bridge_no_token' ? 401 : 502
+    );
+  }
+  const shopId = String(tokenResult.token.shop_id);
+
+  if (request.method === 'GET') {
+    const all = await listHpp(env, shopId);
+    if (all === null) return json({ error: 'kv_read_failed' }, 502);
+    return json({ ok: true, shop_id: shopId, count: Object.keys(all).length, hpp: all });
+  }
+
+  if (request.method === 'POST') {
+    let body = null;
+    try {
+      body = await request.json();
+    } catch (_) {}
+    const result = await setHpp(env, shopId, body?.item_id, body?.hpp);
+    if (!result.ok) {
+      const status =
+        result.error === 'invalid_item_id' || result.error === 'invalid_hpp' ? 400 : 502;
+      return json({ error: result.error }, status);
+    }
+    return json({
+      ok: true,
+      shop_id: shopId,
+      item_id: cleanItemId(body?.item_id),
+      hpp: result.hpp ?? null,
+      deleted: Boolean(result.deleted)
+    });
+  }
+
+  return json({ error: 'method_not_allowed' }, 405);
+};
+
+// Fetch escrow summaries for a list of order SNs (position-aligned array).
+// (Intentionally duplicated from opFinanceToday's inline loop so the live
+// finance path stays untouched.)
+const fetchEscrowSummaries = async (token, env, h, orderSns) => {
+  const summaries = new Array(orderSns.length).fill(null);
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(ESCROW_CONCURRENCY, orderSns.length) },
+    async () => {
+      while (cursor < orderSns.length) {
+        const index = cursor;
+        cursor += 1;
+        const result = await shopPost('/api/v2/payment/get_escrow_detail', token, env, h, {
+          order_sn: orderSns[index]
+        });
+        summaries[index] = escrowSummary(result);
+      }
+    }
+  );
+  await Promise.all(workers);
+  return summaries;
+};
+
+// Profit per item = proportional share of the order's escrow payout
+// (allocated by merchandise value) minus HPP x qty. Items without HPP are
+// listed in items_missing_hpp and excluded from profit_total.
+const opProfitToday = async (token, env, h) => {
+  const date = new Date(Date.now() + WIB_OFFSET_MS).toISOString().slice(0, 10);
+  const base = { date, timezone: 'Asia/Jakarta', currency: 'IDR' };
+
+  const list = await fetchTodayOrderSns(token, env, h);
+  if (!list.ok) return json({ error: 'shopee_order_list_error', message: list.message }, 502);
+  const orderSns = list.orderSns;
+  const shopId = String(token.shop_id);
+
+  if (!orderSns.length) {
+    return json({
+      ok: true,
+      ...base,
+      order_count: 0,
+      omzet_total: 0,
+      payout_total: 0,
+      profit_total: 0,
+      profit_unavailable: false,
+      profit_partial: false,
+      items_missing_hpp: [],
+      note: 'No orders created today yet.'
+    });
+  }
+
+  const detail = await fetchOrderDetails(token, env, h, orderSns, 'item_list');
+  if (!detail.ok) return json({ error: 'shopee_order_detail_error', message: detail.message }, 502);
+  const escrows = await fetchEscrowSummaries(token, env, h, orderSns);
+
+  // Batch-load HPP for every distinct item sold today (one KV read each).
+  const itemIds = new Set();
+  for (const order of detail.details) {
+    for (const it of asArray(order?.item_list)) {
+      const id = cleanItemId(it?.item_id);
+      if (id) itemIds.add(id);
+    }
+  }
+  const hppMap = {};
+  await Promise.all(
+    [...itemIds].map(async (id) => {
+      hppMap[id] = await getHpp(env, shopId, id);
+    })
+  );
+
+  let omzet = 0;
+  let payout = 0;
+  let profit = 0;
+  const missing = new Set();
+  let partial = false;
+
+  const merchOf = (it) =>
+    numberOrZero(it?.model_discounted_price ?? it?.model_original_price) *
+    numberOrZero(it?.model_quantity_purchased);
+
+  // Key lookups by order_sn so a differently-ordered API response cannot
+  // misattribute an escrow payout to the wrong order's items.
+  const detailBySn = new Map();
+  for (const order of detail.details) {
+    if (order?.order_sn) detailBySn.set(String(order.order_sn), order);
+  }
+
+  for (let i = 0; i < orderSns.length; i++) {
+    const sn = String(orderSns[i]);
+    const order = detailBySn.get(sn);
+    if (!order) continue;
+    const items = asArray(order?.item_list).filter((it) => cleanItemId(it?.item_id));
+    omzet += numberOrZero(order?.total_amount);
+    const esc = escrows[i];
+    const orderPayout = esc && esc.available ? esc.payout : 0;
+    payout += orderPayout;
+    if (!items.length) continue;
+
+    const merchTotal = items.reduce((s, it) => s + merchOf(it), 0);
+    for (const it of items) {
+      const itemId = cleanItemId(it?.item_id);
+      const qty = numberOrZero(it?.model_quantity_purchased);
+      const merch = merchOf(it);
+      const share = merchTotal > 0 ? merch / merchTotal : 1 / items.length;
+      const payoutShare = orderPayout * share;
+      const hpp = hppMap[itemId];
+      if (hpp == null) {
+        missing.add(itemId);
+        partial = true;
+        continue; // payout counted above; profit for this item is unknown
+      }
+      profit += payoutShare - hpp * qty;
+    }
+  }
+
+  const profitUnavailable = !Object.values(hppMap).some((v) => v != null);
+
+  return json({
+    ok: true,
+    ...base,
+    order_count: orderSns.length,
+    omzet_total: Math.round(omzet),
+    payout_total: Math.round(payout),
+    profit_total: profitUnavailable ? null : Math.round(profit),
+    profit_unavailable: profitUnavailable,
+    profit_partial: partial,
+    items_missing_hpp: [...missing].sort(),
+    note: profitUnavailable
+      ? 'No HPP stored in KV yet — set it via POST /api/bridge/hpp. Other figures are unaffected.'
+      : 'Profit per item = proportional share of escrow payout − HPP × qty.'
+  });
 };

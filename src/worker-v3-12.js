@@ -1,6 +1,6 @@
 import baseWorker from './worker-v3-11.js';
 import { shopeeFetch } from './shopee-egress.js';
-import { handleBridgeQuery } from './muse-bridge.js';
+import { handleBridgeQuery, handleBridgeHpp } from './muse-bridge.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -244,7 +244,8 @@ const bridgeHelpers = {
   buildShopEndpoint: bridgeShopEndpoint,
   refreshShopeeToken,
   persistTokenToKV,
-  shopeeFetch
+  shopeeFetch,
+  sessionIsValid
 };
 
 const getFreshToken = async (request, env, minValidity = TOKEN_REFRESH_WINDOW) => {
@@ -494,6 +495,9 @@ export default {
     }
     if (url.pathname === '/api/bridge/query' && request.method === 'POST') {
       return handleBridgeQuery(request, env, bridgeHelpers);
+    }
+    if (url.pathname === '/api/bridge/hpp' && (request.method === 'GET' || request.method === 'POST')) {
+      return handleBridgeHpp(request, env, bridgeHelpers);
     }
     return baseWorker.fetch(request, env);
   }
