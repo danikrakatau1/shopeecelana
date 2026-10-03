@@ -1,5 +1,6 @@
 import baseWorker from './worker-v3-11.js';
 import { shopeeFetch } from './shopee-egress.js';
+import { handleBridgeQuery, handleBridgeHpp } from './muse-bridge.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -80,6 +81,41 @@ const hmacHex = async (secret, value) => {
 };
 
 const getShopeeBase = (env) => (env.SHOPEE_API_BASE || SHOPEE_DEFAULT_BASE).replace(/\/$/, '');
+
+// --- Muse bridge (KV token storage) --------------------------------------
+// Key under which the encrypted Shopee token is stored in the SHOPEE_KV
+// binding. `token:primary` is the single-shop well-known key the bridge
+// endpoint reads; `token:<shop_id>` is kept for future multi-shop use.
+// Everything here is best-effort: if the KV binding is not configured yet,
+// token persistence is skipped silently and the dashboard keeps working on
+// its encrypted HttpOnly cookie alone.
+const BRIDGE_KV_PRIMARY_KEY = 'token:primary';
+
+const persistTokenToKV = async (token, env) => {
+  try {
+    if (!env.SHOPEE_KV || !env.SESSION_SECRET) return false;
+    if (!token?.access_token || !token?.shop_id) return false;
+    const encrypted = await encryptObject(token, env.SESSION_SECRET);
+    await env.SHOPEE_KV.put(BRIDGE_KV_PRIMARY_KEY, encrypted);
+    await env.SHOPEE_KV.put(`token:${token.shop_id}`, encrypted);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+
+// Bridge variant of buildShopEndpoint that also appends extra query params
+// (matches the worker-v3-3.js pattern used by the order/finance panels).
+const bridgeShopEndpoint = async (path, token, env, params = {}) => {
+  const endpoint = await buildShopEndpoint(path, token, env);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') endpoint.searchParams.set(key, String(value));
+  });
+  return endpoint;
+};
+
+// --- end Muse bridge ------------------------------------------------------
+
 const shopeeCookie = (token) => `${SHOPEE_COOKIE}=${token}; Path=/api/shopee; HttpOnly; Secure; SameSite=Lax; Max-Age=${SHOPEE_COOKIE_TTL}`;
 const clearOauthCookie = () => `${OAUTH_COOKIE}=; Path=/shopee/callback; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 
@@ -185,20 +221,31 @@ const refreshShopeeToken = async (token, env) => {
       return { ok: false, error: 'refresh_failed', message: parseShopeeError(data, 'Shopee token refresh failed') };
     }
     const now = Math.floor(Date.now() / 1000);
-    return {
-      ok: true,
-      token: {
-        ...token,
-        access_token: data.access_token,
-        refresh_token: data.refresh_token || token.refresh_token,
-        expire_in: Number(data.expire_in || token.expire_in || 0),
-        expires_at: Number(data.expire_in || 0) ? now + Number(data.expire_in) : null,
-        refreshed_at: now
-      }
+    const nextToken = {
+      ...token,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || token.refresh_token,
+      expire_in: Number(data.expire_in || token.expire_in || 0),
+      expires_at: Number(data.expire_in || 0) ? now + Number(data.expire_in) : null,
+      refreshed_at: now
     };
+    // Muse bridge: keep the KV copy in sync after every successful refresh.
+    await persistTokenToKV(nextToken, env);
+    return { ok: true, token: nextToken };
   } catch (_) {
     return { ok: false, error: 'refresh_unreachable', message: 'Shopee token refresh unreachable' };
   }
+};
+
+// Helpers handed to the Muse bridge module (defined here, after
+// refreshShopeeToken, to avoid temporal-dead-zone issues at module load).
+const bridgeHelpers = {
+  decryptObject,
+  buildShopEndpoint: bridgeShopEndpoint,
+  refreshShopeeToken,
+  persistTokenToKV,
+  shopeeFetch,
+  sessionIsValid
 };
 
 const getFreshToken = async (request, env, minValidity = TOKEN_REFRESH_WINDOW) => {
@@ -365,6 +412,9 @@ const handleShopeeCallback = async (request, env) => {
     connected_at: now
   };
   const encrypted = await encryptObject(payload, env.SESSION_SECRET);
+  // Muse bridge: also persist the encrypted token to KV (best-effort; the
+  // dashboard cookie flow is unaffected if KV is not configured yet).
+  await persistTokenToKV(payload, env);
   const destination = new URL('/dashboard/', requestUrl.origin);
   destination.searchParams.set('shopee', 'connected');
   destination.hash = 'connection';
@@ -442,6 +492,12 @@ export default {
     }
     if (url.pathname === '/shopee/callback' && request.method === 'GET') {
       return handleShopeeCallback(request, env);
+    }
+    if (url.pathname === '/api/bridge/query' && request.method === 'POST') {
+      return handleBridgeQuery(request, env, bridgeHelpers);
+    }
+    if (url.pathname === '/api/bridge/hpp' && (request.method === 'GET' || request.method === 'POST')) {
+      return handleBridgeHpp(request, env, bridgeHelpers);
     }
     return baseWorker.fetch(request, env);
   }
