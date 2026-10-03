@@ -17,6 +17,9 @@
 const TOKEN_REFRESH_WINDOW = 15 * 60; // seconds
 const MAX_BRIDGE_ORDERS = 100;
 const ESCROW_CONCURRENCY = 4;
+const MAX_BRIDGE_PRODUCTS = 200;
+const PRODUCT_PAGE_SIZE = 100;
+const PRODUCT_DETAIL_CONCURRENCY = 4;
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 const BRIDGE_KV_KEY = 'token:primary';
 
@@ -322,6 +325,94 @@ const opAdsToday = async (token, env, h) => {
   });
 };
 
+// ---- products op ----
+// Read-only product list for HPP mapping: get_item_list (paginated) +
+// get_item_base_info (chunked, concurrent). Returns { item_id, name, price, stock }.
+const normalizeBridgePrice = (item) => {
+  const list = item?.price_info || item?.price_info_list || [];
+  const first = Array.isArray(list) ? list[0] : list;
+  return Number(first?.current_price ?? first?.original_price ?? item?.price ?? 0) || 0;
+};
+
+const normalizeBridgeStock = (item) => {
+  const v2 = item?.stock_info_v2 || {};
+  const candidates = [v2?.summary_info?.total_available_stock, v2?.current_stock, item?.stock, item?.normal_stock];
+  for (const value of candidates) {
+    const number = Number(value);
+    if (Number.isFinite(number)) return number;
+  }
+  const stockList = item?.stock_info || [];
+  return Array.isArray(stockList)
+    ? stockList.reduce((sum, entry) => sum + (Number(entry?.current_stock ?? entry?.normal_stock ?? 0) || 0), 0)
+    : 0;
+};
+
+const opProducts = async (token, env, h) => {
+  // 1. Collect item ids via get_item_list (offset pagination, cap 200).
+  const itemIds = [];
+  let totalCount = 0;
+  let offset = 0;
+  for (let page = 0; page < 10 && itemIds.length < MAX_BRIDGE_PRODUCTS; page++) {
+    const result = await shopGet('/api/v2/product/get_item_list', token, env, h, {
+      offset,
+      page_size: PRODUCT_PAGE_SIZE,
+      item_status: 'NORMAL'
+    });
+    if (!result.ok) return json({ error: 'shopee_product_list_error', message: result.message }, 502);
+    const response = result.data?.response || {};
+    if (page === 0) totalCount = Number(response.total_count ?? 0) || 0;
+    const listItems = asArray(response.item).length ? asArray(response.item) : asArray(response.item_list);
+    for (const item of listItems) {
+      if (item?.item_id != null) itemIds.push(String(item.item_id));
+    }
+    if (!response.has_next_page || !listItems.length) break;
+    offset = Number(response.next_offset ?? response.next ?? offset + listItems.length) || offset + listItems.length;
+  }
+  const ids = itemIds.slice(0, MAX_BRIDGE_PRODUCTS);
+
+  // 2. Fetch base info in chunks of 50, up to 4 concurrent requests.
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
+  const detailById = new Map();
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(PRODUCT_DETAIL_CONCURRENCY, chunks.length) }, async () => {
+    while (cursor < chunks.length) {
+      const index = cursor;
+      cursor += 1;
+      const result = await shopGet('/api/v2/product/get_item_base_info', token, env, h, {
+        item_id_list: chunks[index].join(',')
+      });
+      if (!result.ok) continue;
+      const response = result.data?.response || {};
+      const items = asArray(response.item_list).length ? asArray(response.item_list) : asArray(response.item);
+      for (const item of items) {
+        if (item?.item_id != null) detailById.set(String(item.item_id), item);
+      }
+    }
+  });
+  await Promise.all(workers);
+
+  const products = ids.map((id) => {
+    const detail = detailById.get(id) || null;
+    return {
+      item_id: id,
+      name: detail ? detail.item_name || detail.name || `Shopee Item ${id}` : `Shopee Item ${id}`,
+      price: detail ? normalizeBridgePrice(detail) : 0,
+      stock: detail ? normalizeBridgeStock(detail) : 0,
+      has_model: detail ? Boolean(detail.has_model) : false
+    };
+  });
+
+  return json({
+    ok: true,
+    count: products.length,
+    total_count: totalCount,
+    capped: itemIds.length >= MAX_BRIDGE_PRODUCTS && totalCount > MAX_BRIDGE_PRODUCTS,
+    currency: 'IDR',
+    products
+  });
+};
+
 export const handleBridgeQuery = async (request, env, h) => {
   if (!env.MUSE_BRIDGE_SECRET) {
     return json({ error: 'bridge_not_configured' }, 503);
@@ -341,7 +432,8 @@ export const handleBridgeQuery = async (request, env, h) => {
     orders_today: opOrdersToday,
     finance_today: opFinanceToday,
     ads_today: opAdsToday,
-    profit_today: opProfitToday
+    profit_today: opProfitToday,
+    products: opProducts
   };
   if (!OPS[op]) {
     return json({ error: 'unknown_op', allowed: Object.keys(OPS) }, 400);
