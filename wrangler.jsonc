@@ -11,6 +11,13 @@
       "SHOPEE_PARTNER_KEY"
     ]
   },
+  "kv_namespaces": [
+    {
+      "binding": "SHOPEE_KV",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID",
+      "preview_id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
